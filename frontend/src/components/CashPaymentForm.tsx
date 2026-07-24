@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { formatUah } from '../api/client';
-import type { StudentResponse, TariffPlan } from '../api/types';
+import { api, formatUah } from '../api/client';
+import type { EnrollmentResponse, StudentResponse, TariffPlan } from '../api/types';
 
 interface Props {
   students: StudentResponse[];
@@ -26,6 +26,7 @@ const MONTH_NAMES = [
 
 export function CashPaymentForm({ students, tariffPlans, defaultYear, onSubmit, onCancel }: Props) {
   const [studentId, setStudentId] = useState<number | ''>('');
+  const [enrollments, setEnrollments] = useState<EnrollmentResponse[]>([]);
   const [tariffPlanId, setTariffPlanId] = useState<number | ''>('');
   const [amountUah, setAmountUah] = useState('');
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -34,6 +35,21 @@ export function CashPaymentForm({ students, tariffPlans, defaultYear, onSubmit, 
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTariffPlanId('');
+    if (!studentId) {
+      setEnrollments([]);
+      return;
+    }
+    api.studentEnrollments(studentId)
+      .then(setEnrollments)
+      .catch((e) => setError(e.message));
+  }, [studentId]);
+
+  const studentTariffPlans = tariffPlans.filter((p) =>
+    enrollments.some((e) => e.active && e.tariffPlanId === p.id)
+  );
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -91,10 +107,17 @@ export function CashPaymentForm({ students, tariffPlans, defaultYear, onSubmit, 
             id="tariff"
             value={tariffPlanId}
             onChange={(e) => setTariffPlanId(e.target.value ? Number(e.target.value) : '')}
+            disabled={!studentId}
             required
           >
-            <option value="">Оберіть тариф</option>
-            {tariffPlans.filter((p) => p.active).map((p) => (
+            <option value="">
+              {!studentId
+                ? 'Спочатку оберіть студента'
+                : studentTariffPlans.length === 0
+                ? 'У студента немає активних тарифів'
+                : 'Оберіть тариф'}
+            </option>
+            {studentTariffPlans.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
                 {p.currentAmountKopiykas != null ? ` — ${formatUah(p.currentAmountKopiykas)} грн` : ''}
