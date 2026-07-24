@@ -25,9 +25,10 @@ export function TariffsPage() {
   return (
     <div>
       <h2>Тарифи</h2>
-      <p className="muted">
-        Зміна ціни не переписує минуле — вона діє з дати "чинний з", а старі місяці журналу й далі рахуються за старою ціною.
-      </p>
+      <div className="notice notice-blue">
+        <span className="notice-icon">i</span>
+        <span>Зміна ціни не переписує минуле — вона діє з дати "чинний з", а старі місяці журналу й далі рахуються за старою ціною.</span>
+      </div>
       {error && <div className="error-banner">{error}</div>}
 
       <div className="toolbar">
@@ -51,7 +52,12 @@ export function TariffsPage() {
                 <td>{plan.label}</td>
                 <td className="muted">{SERVICE_TYPE_LABELS[plan.serviceType]}</td>
                 <td>{plan.currentAmountKopiykas != null ? `${formatUah(plan.currentAmountKopiykas)} грн` : '—'}</td>
-                <td className="muted">{plan.active ? 'Активний' : 'Неактивний'}</td>
+                <td>
+                  <span className={`status-badge ${plan.active ? 'status-green' : 'status-red'}`}>
+                    <span className="dot" />
+                    {plan.active ? 'Активний' : 'Неактивний'}
+                  </span>
+                </td>
                 <td>
                   <button onClick={() => setChangingPriceFor(plan)}>Змінити ціну</button>{' '}
                   <button onClick={() => setHistoryForPlanId(plan.id)}>Історія цін</button>{' '}

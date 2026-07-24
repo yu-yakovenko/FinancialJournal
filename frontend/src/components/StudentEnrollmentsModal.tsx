@@ -82,6 +82,7 @@ export function StudentEnrollmentsModal({ studentId, studentName, onClose, onCha
                 <th>Тариф</th>
                 <th>Чинний з</th>
                 <th>Чинний до</th>
+                <th>Статус</th>
                 <th></th>
               </tr>
             </thead>
@@ -91,6 +92,12 @@ export function StudentEnrollmentsModal({ studentId, studentName, onClose, onCha
                   <td>{e.tariffLabel}</td>
                   <td>{e.validFrom}</td>
                   <td>{e.validTo ?? '—'}</td>
+                  <td>
+                    <span className={`status-badge ${e.active ? 'status-green' : 'status-red'}`}>
+                      <span className="dot" />
+                      {e.active ? 'Активний' : 'Завершено'}
+                    </span>
+                  </td>
                   <td>
                     {e.active ? (
                       <button disabled={busy} onClick={() => handleEnd(e.id)}>Завершити</button>

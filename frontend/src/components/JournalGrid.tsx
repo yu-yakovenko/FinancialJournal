@@ -10,7 +10,7 @@ interface Props {
 
 export function JournalGrid({ grid, onCellClick }: Props) {
   if (grid.rows.length === 0) {
-    return <p className="muted">Ще немає жодного студента. Додайте студента вручну або зачекайте на перший платіж.</p>;
+    return <div className="empty-state">Ще немає жодного студента. Додайте студента вручну або зачекайте на перший платіж.</div>;
   }
 
   return (

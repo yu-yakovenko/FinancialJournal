@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 export function NavBar() {
   return (
     <nav className="app-nav">
-      <strong>Журнал оплат вокальної школи</strong>
+      <strong className="brand">Журнал оплат вокальної школи</strong>
       <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
         Журнал
       </NavLink>

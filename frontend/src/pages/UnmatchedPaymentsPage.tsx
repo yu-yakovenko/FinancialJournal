@@ -30,7 +30,7 @@ export function UnmatchedPaymentsPage() {
       </p>
       {error && <div className="error-banner">{error}</div>}
 
-      {payments.length === 0 && <p className="muted">Немає платежів, що потребують уваги.</p>}
+      {payments.length === 0 && <div className="empty-state">Немає платежів, що потребують уваги.</div>}
 
       {payments.map((payment) => (
         <UnmatchedPaymentRow
@@ -99,7 +99,7 @@ function UnmatchedPaymentRow({
   }
 
   return (
-    <div className="modal" style={{ maxWidth: 700, margin: '0 0 16px' }}>
+    <div className="card" style={{ maxWidth: 700 }}>
       <div>
         <strong>{formatUah(payment.amountKopiykas)} грн</strong> · {payment.paymentDate} · {payment.source === 'CASH' ? 'Готівка' : 'Банк'}
       </div>
