@@ -8,6 +8,7 @@ import java.time.LocalDate;
 
 public record CashPaymentRequest(
         @NotNull Long studentId,
+        @NotNull Long tariffPlanId,
         @NotNull @Positive BigDecimal amountUah,
         @NotNull LocalDate paymentDate,
         @NotNull Integer periodYear,

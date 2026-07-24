@@ -1,26 +1,48 @@
-export type Tariff = 'INDIVIDUAL_500' | 'INDIVIDUAL_700' | 'CHOIR_VPO_680' | 'CHOIR_STANDARD_1700';
+export type ServiceType = 'INDIVIDUAL' | 'CHOIR';
 
-export const TARIFFS: Tariff[] = ['INDIVIDUAL_500', 'INDIVIDUAL_700', 'CHOIR_VPO_680', 'CHOIR_STANDARD_1700'];
-
-export const TARIFF_LABELS: Record<Tariff, string> = {
-  INDIVIDUAL_500: 'Індивідуальні, 500 грн',
-  INDIVIDUAL_700: 'Індивідуальні, 700 грн',
-  CHOIR_VPO_680: 'Хор (ВПО), 680 грн',
-  CHOIR_STANDARD_1700: 'Хор, 1700 грн',
+export const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
+  INDIVIDUAL: 'Індивідуальні заняття',
+  CHOIR: 'Хор',
 };
+
+export interface TariffPlan {
+  id: number;
+  serviceType: ServiceType;
+  label: string;
+  active: boolean;
+  currentAmountKopiykas: number | null;
+}
+
+export interface TariffRate {
+  id: number;
+  amountKopiykas: number;
+  effectiveFrom: string;
+}
+
+export interface EnrollmentResponse {
+  id: number;
+  studentId: number;
+  tariffPlanId: number;
+  tariffLabel: string;
+  validFrom: string;
+  validTo: string | null;
+  active: boolean;
+}
 
 export type CellStatus = 'GREEN' | 'YELLOW' | 'RED';
 
 export interface JournalCell {
   amountKopiykas: number;
+  expectedAmountKopiykas: number | null;
   status: CellStatus;
 }
 
+/** One row per (student, tariff enrollment) — a student on two tariffs gets two rows. */
 export interface JournalRow {
   studentId: number;
   fullName: string;
-  tariffLabel: Tariff | null;
-  tariffAmountKopiykas: number | null;
+  tariffPlanId: number | null;
+  tariffLabel: string | null;
   cells: (JournalCell | null)[];
 }
 
@@ -43,8 +65,7 @@ export interface PaymentDetail {
 export interface StudentResponse {
   id: number;
   fullName: string;
-  tariff: Tariff | null;
-  tariffAmountKopiykas: number | null;
+  activeTariffLabels: string[];
   active: boolean;
   createdAt: string;
 }
@@ -52,6 +73,8 @@ export interface StudentResponse {
 export interface PaymentResponse {
   id: number;
   studentId: number | null;
+  tariffPlanId: number | null;
+  tariffLabel: string | null;
   source: PaymentSource;
   matchStatus: PaymentMatchStatus;
   amountKopiykas: number;

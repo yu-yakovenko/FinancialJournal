@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { StudentResponse } from '../api/types';
+import { formatUah } from '../api/client';
+import type { StudentResponse, TariffPlan } from '../api/types';
 
 interface Props {
   students: StudentResponse[];
+  tariffPlans: TariffPlan[];
   defaultYear: number;
   onSubmit: (data: {
     studentId: number;
+    tariffPlanId: number;
     amountUah: number;
     paymentDate: string;
     periodYear: number;
@@ -21,8 +24,9 @@ const MONTH_NAMES = [
   'липень', 'серпень', 'вересень', 'жовтень', 'листопад', 'грудень',
 ];
 
-export function CashPaymentForm({ students, defaultYear, onSubmit, onCancel }: Props) {
+export function CashPaymentForm({ students, tariffPlans, defaultYear, onSubmit, onCancel }: Props) {
   const [studentId, setStudentId] = useState<number | ''>('');
+  const [tariffPlanId, setTariffPlanId] = useState<number | ''>('');
   const [amountUah, setAmountUah] = useState('');
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [periodYear, setPeriodYear] = useState(defaultYear);
@@ -37,11 +41,16 @@ export function CashPaymentForm({ students, defaultYear, onSubmit, onCancel }: P
       setError('Оберіть студента');
       return;
     }
+    if (!tariffPlanId) {
+      setError('Оберіть тариф');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       await onSubmit({
         studentId,
+        tariffPlanId,
         amountUah: Number(amountUah),
         paymentDate,
         periodYear,
@@ -72,6 +81,24 @@ export function CashPaymentForm({ students, defaultYear, onSubmit, onCancel }: P
             <option value="">Оберіть студента</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>{s.fullName}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-row">
+          <label htmlFor="tariff">Тариф</label>
+          <select
+            id="tariff"
+            value={tariffPlanId}
+            onChange={(e) => setTariffPlanId(e.target.value ? Number(e.target.value) : '')}
+            required
+          >
+            <option value="">Оберіть тариф</option>
+            {tariffPlans.filter((p) => p.active).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+                {p.currentAmountKopiykas != null ? ` — ${formatUah(p.currentAmountKopiykas)} грн` : ''}
+              </option>
             ))}
           </select>
         </div>

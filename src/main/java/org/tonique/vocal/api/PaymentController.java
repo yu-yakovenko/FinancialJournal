@@ -14,8 +14,6 @@ import org.tonique.vocal.api.dto.PaymentResolveRequest;
 import org.tonique.vocal.api.dto.PaymentResponse;
 import org.tonique.vocal.payment.PaymentService;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 
 @RestController
@@ -32,7 +30,8 @@ public class PaymentController {
     public PaymentResponse addCash(@Valid @RequestBody CashPaymentRequest request) {
         return PaymentResponse.from(paymentService.addCash(
                 request.studentId(),
-                toKopiykas(request.amountUah()),
+                request.tariffPlanId(),
+                MoneyConversion.toKopiykas(request.amountUah()),
                 request.paymentDate(),
                 request.periodYear(),
                 request.periodMonth(),
@@ -43,7 +42,7 @@ public class PaymentController {
     @PatchMapping("/{id}")
     public PaymentResponse patch(@PathVariable Long id, @RequestBody PaymentPatchRequest request) {
         return PaymentResponse.from(
-                paymentService.patch(id, request.studentId(), request.periodYear(), request.periodMonth())
+                paymentService.patch(id, request.studentId(), request.tariffPlanId(), request.periodYear(), request.periodMonth())
         );
     }
 
@@ -55,18 +54,12 @@ public class PaymentController {
     @PostMapping("/{id}/resolve")
     public PaymentResponse resolve(@PathVariable Long id, @Valid @RequestBody PaymentResolveRequest request) {
         return PaymentResponse.from(
-                paymentService.resolve(id, request.studentId(), request.periodYear(), request.periodMonth())
+                paymentService.resolve(id, request.studentId(), request.tariffPlanId(), request.periodYear(), request.periodMonth())
         );
     }
 
     @PostMapping("/{id}/ignore")
     public PaymentResponse ignore(@PathVariable Long id) {
         return PaymentResponse.from(paymentService.ignore(id));
-    }
-
-    private long toKopiykas(BigDecimal amountUah) {
-        return amountUah.setScale(2, RoundingMode.HALF_UP)
-                .movePointRight(2)
-                .longValueExact();
     }
 }

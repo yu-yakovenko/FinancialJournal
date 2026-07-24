@@ -30,9 +30,10 @@ public class JournalController {
     @GetMapping("/students/{id}/payments")
     public List<PaymentDetail> studentPayments(
             @PathVariable Long id,
+            @RequestParam Long tariffPlanId,
             @RequestParam int year,
             @RequestParam int month
     ) {
-        return journalService.studentMonthDetail(id, year, month);
+        return journalService.studentMonthDetail(id, tariffPlanId, year, month);
     }
 }

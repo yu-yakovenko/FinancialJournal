@@ -12,6 +12,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     List<Payment> findByMatchStatusAndPeriodYear(PaymentMatchStatus matchStatus, int periodYear);
 
-    List<Payment> findByStudentIdAndMatchStatusAndPeriodYearAndPeriodMonth(
-            Long studentId, PaymentMatchStatus matchStatus, int periodYear, int periodMonth);
+    List<Payment> findByStudentIdAndTariffPlanIdAndMatchStatusAndPeriodYearAndPeriodMonth(
+            Long studentId, Long tariffPlanId, PaymentMatchStatus matchStatus, int periodYear, int periodMonth);
 }

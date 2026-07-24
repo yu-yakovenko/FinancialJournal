@@ -10,6 +10,9 @@ export function NavBar() {
       <NavLink to="/students" className={({ isActive }) => (isActive ? 'active' : '')}>
         Студенти
       </NavLink>
+      <NavLink to="/tariffs" className={({ isActive }) => (isActive ? 'active' : '')}>
+        Тарифи
+      </NavLink>
       <NavLink to="/unmatched" className={({ isActive }) => (isActive ? 'active' : '')}>
         Неопрацьовані платежі
       </NavLink>

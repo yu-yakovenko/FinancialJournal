@@ -1,17 +1,15 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { TARIFF_LABELS, TARIFFS } from '../api/types';
-import type { StudentResponse, Tariff } from '../api/types';
+import type { StudentResponse } from '../api/types';
 
 interface Props {
   student?: StudentResponse;
-  onSubmit: (data: { fullName: string; tariff: Tariff | null; active: boolean }) => Promise<void>;
+  onSubmit: (data: { fullName: string; active: boolean }) => Promise<void>;
   onCancel: () => void;
 }
 
 export function StudentForm({ student, onSubmit, onCancel }: Props) {
   const [fullName, setFullName] = useState(student?.fullName ?? '');
-  const [tariff, setTariff] = useState<Tariff | ''>(student?.tariff ?? '');
   const [active, setActive] = useState(student?.active ?? true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +19,7 @@ export function StudentForm({ student, onSubmit, onCancel }: Props) {
     setSaving(true);
     setError(null);
     try {
-      await onSubmit({ fullName: fullName.trim(), tariff: tariff || null, active });
+      await onSubmit({ fullName: fullName.trim(), active });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -46,16 +44,6 @@ export function StudentForm({ student, onSubmit, onCancel }: Props) {
           />
         </div>
 
-        <div className="form-row">
-          <label htmlFor="tariff">Тариф</label>
-          <select id="tariff" value={tariff} onChange={(e) => setTariff(e.target.value as Tariff | '')}>
-            <option value="">Ще не визначено</option>
-            {TARIFFS.map((t) => (
-              <option key={t} value={t}>{TARIFF_LABELS[t]}</option>
-            ))}
-          </select>
-        </div>
-
         {student && (
           <div className="form-row">
             <label>
@@ -68,6 +56,10 @@ export function StudentForm({ student, onSubmit, onCancel }: Props) {
               Активний (показувати в журналі)
             </label>
           </div>
+        )}
+
+        {!student && (
+          <p className="muted">Тарифи додаються окремо, після створення студента.</p>
         )}
 
         <div className="toolbar">

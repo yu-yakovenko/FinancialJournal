@@ -1,4 +1,13 @@
-import type { JournalGrid, PaymentDetail, PaymentResponse, StudentResponse, Tariff } from './types';
+import type {
+  EnrollmentResponse,
+  JournalGrid,
+  PaymentDetail,
+  PaymentResponse,
+  ServiceType,
+  StudentResponse,
+  TariffPlan,
+  TariffRate,
+} from './types';
 
 const BASE = '/api';
 
@@ -21,21 +30,34 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export const api = {
   journal: (year: number) => request<JournalGrid>(`/journal?year=${year}`),
 
-  studentPayments: (studentId: number, year: number, month: number) =>
-    request<PaymentDetail[]>(`/students/${studentId}/payments?year=${year}&month=${month}`),
+  studentPayments: (studentId: number, tariffPlanId: number, year: number, month: number) =>
+    request<PaymentDetail[]>(`/students/${studentId}/payments?tariffPlanId=${tariffPlanId}&year=${year}&month=${month}`),
 
   students: () => request<StudentResponse[]>('/students'),
 
-  createStudent: (data: { fullName: string; tariff: Tariff | null }) =>
+  createStudent: (data: { fullName: string }) =>
     request<StudentResponse>('/students', { method: 'POST', body: JSON.stringify(data) }),
 
-  updateStudent: (id: number, data: { fullName: string; tariff: Tariff | null; active: boolean }) =>
+  updateStudent: (id: number, data: { fullName: string; active: boolean }) =>
     request<StudentResponse>(`/students/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   deactivateStudent: (id: number) => request<void>(`/students/${id}`, { method: 'DELETE' }),
 
+  studentEnrollments: (studentId: number) =>
+    request<EnrollmentResponse[]>(`/students/${studentId}/enrollments`),
+
+  addEnrollment: (studentId: number, data: { tariffPlanId: number; validFrom?: string }) =>
+    request<EnrollmentResponse>(`/students/${studentId}/enrollments`, { method: 'POST', body: JSON.stringify(data) }),
+
+  endEnrollment: (id: number, validTo?: string) =>
+    request<EnrollmentResponse>(`/enrollments/${id}/end`, { method: 'POST', body: JSON.stringify({ validTo }) }),
+
+  reactivateEnrollment: (id: number) =>
+    request<EnrollmentResponse>(`/enrollments/${id}/reactivate`, { method: 'POST' }),
+
   addCashPayment: (data: {
     studentId: number;
+    tariffPlanId: number;
     amountUah: number;
     paymentDate: string;
     periodYear: number;
@@ -45,10 +67,23 @@ export const api = {
 
   unmatchedPayments: () => request<PaymentResponse[]>('/payments/unmatched'),
 
-  resolvePayment: (id: number, data: { studentId: number; periodYear: number; periodMonth: number }) =>
+  resolvePayment: (id: number, data: { studentId: number; tariffPlanId: number; periodYear: number; periodMonth: number }) =>
     request<PaymentResponse>(`/payments/${id}/resolve`, { method: 'POST', body: JSON.stringify(data) }),
 
   ignorePayment: (id: number) => request<PaymentResponse>(`/payments/${id}/ignore`, { method: 'POST' }),
+
+  tariffPlans: () => request<TariffPlan[]>('/tariffs'),
+
+  createTariffPlan: (data: { serviceType: ServiceType; label: string; initialAmountUah: number; effectiveFrom?: string }) =>
+    request<TariffPlan>('/tariffs', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateTariffPlan: (id: number, data: { label: string; active: boolean }) =>
+    request<TariffPlan>(`/tariffs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  tariffRates: (id: number) => request<TariffRate[]>(`/tariffs/${id}/rates`),
+
+  addTariffRate: (id: number, data: { amountUah: number; effectiveFrom?: string }) =>
+    request<TariffRate>(`/tariffs/${id}/rates`, { method: 'POST', body: JSON.stringify(data) }),
 };
 
 export function formatUah(amountKopiykas: number): string {

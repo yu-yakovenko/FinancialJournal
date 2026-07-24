@@ -6,8 +6,8 @@ import java.util.List;
 public record JournalRow(
         Long studentId,
         String fullName,
+        Long tariffPlanId,
         String tariffLabel,
-        Long tariffAmountKopiykas,
         List<JournalCell> cells
 ) {
 }

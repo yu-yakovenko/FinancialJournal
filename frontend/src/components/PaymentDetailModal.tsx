@@ -4,7 +4,9 @@ import type { PaymentDetail } from '../api/types';
 
 interface Props {
   studentId: number;
+  tariffPlanId: number;
   fullName: string;
+  tariffLabel: string;
   year: number;
   month: number;
   onClose: () => void;
@@ -15,20 +17,20 @@ const MONTH_NAMES = [
   'липень', 'серпень', 'вересень', 'жовтень', 'листопад', 'грудень',
 ];
 
-export function PaymentDetailModal({ studentId, fullName, year, month, onClose }: Props) {
+export function PaymentDetailModal({ studentId, tariffPlanId, fullName, tariffLabel, year, month, onClose }: Props) {
   const [payments, setPayments] = useState<PaymentDetail[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.studentPayments(studentId, year, month)
+    api.studentPayments(studentId, tariffPlanId, year, month)
       .then(setPayments)
       .catch((e) => setError(e.message));
-  }, [studentId, year, month]);
+  }, [studentId, tariffPlanId, year, month]);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>{fullName} — {MONTH_NAMES[month - 1]} {year}</h3>
+        <h3>{fullName} ({tariffLabel}) — {MONTH_NAMES[month - 1]} {year}</h3>
         {error && <div className="error-banner">{error}</div>}
         {!payments && !error && <p className="muted">Завантаження…</p>}
         {payments && payments.length === 0 && <p className="muted">Оплат за цей місяць немає.</p>}

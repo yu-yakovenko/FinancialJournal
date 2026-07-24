@@ -13,6 +13,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import org.tonique.vocal.student.Student;
+import org.tonique.vocal.tariff.TariffPlan;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -28,6 +29,13 @@ public class Payment {
     @ManyToOne
     @JoinColumn(name = "student_id")
     private Student student;
+
+    /** Which tariff this payment counts toward — set only once matching succeeds
+     *  (a student can be on several tariffs at once, so this can't be inferred from
+     *  the student alone). */
+    @ManyToOne
+    @JoinColumn(name = "tariff_plan_id")
+    private TariffPlan tariffPlan;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -74,11 +82,12 @@ public class Payment {
         return payment;
     }
 
-    public static Payment cash(Student student, long amountKopiykas, LocalDate paymentDate,
+    public static Payment cash(Student student, TariffPlan tariffPlan, long amountKopiykas, LocalDate paymentDate,
                                 int periodYear, int periodMonth, String comment) {
         Payment payment = new Payment();
         payment.source = PaymentSource.CASH;
         payment.student = student;
+        payment.tariffPlan = tariffPlan;
         payment.amountKopiykas = amountKopiykas;
         payment.paymentDate = paymentDate;
         payment.periodYear = periodYear;
@@ -107,12 +116,16 @@ public class Payment {
         this.student = student;
     }
 
-    public PaymentSource getSource() {
-        return source;
+    public TariffPlan getTariffPlan() {
+        return tariffPlan;
     }
 
-    public String getMonobankTransactionId() {
-        return monobankTransactionId;
+    public void setTariffPlan(TariffPlan tariffPlan) {
+        this.tariffPlan = tariffPlan;
+    }
+
+    public PaymentSource getSource() {
+        return source;
     }
 
     public long getAmountKopiykas() {
@@ -159,7 +172,4 @@ public class Payment {
         this.matchStatus = matchStatus;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }

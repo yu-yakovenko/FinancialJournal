@@ -8,9 +8,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class NameMatcherTest {
 
-    private final Student ivanenko = new Student("Іваненко Ольга Петрівна", null);
-    private final Student ivanenkoAnother = new Student("Іваненко Оксана Дмитрівна", null);
-    private final Student koval = new Student("Коваль Андрій Борисович", null);
+    private final Student ivanenko = new Student("Іваненко Ольга Петрівна");
+    private final Student ivanenkoAnother = new Student("Іваненко Оксана Дмитрівна");
+    private final Student koval = new Student("Коваль Андрій Борисович");
 
     @Test
     void matchesFullName() {
@@ -58,7 +58,7 @@ class NameMatcherTest {
 
     @Test
     void doesNotMatchDifferentSurnameEvenWithSameInitials() {
-        Student other = new Student("Петренко Ольга Петрівна", null);
+        Student other = new Student("Петренко Ольга Петрівна");
 
         NameMatcher.MatchResult result = NameMatcher.match("Іваненко О.П.", List.of(other));
 

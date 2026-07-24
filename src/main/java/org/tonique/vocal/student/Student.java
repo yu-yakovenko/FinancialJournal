@@ -2,8 +2,6 @@ package org.tonique.vocal.student;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,9 +26,6 @@ public class Student {
     @Column(nullable = false)
     private String normalizedFullName;
 
-    @Enumerated(EnumType.STRING)
-    private Tariff tariff;
-
     @Column(nullable = false)
     private boolean active = true;
 
@@ -40,9 +35,8 @@ public class Student {
     protected Student() {
     }
 
-    public Student(String fullName, Tariff tariff) {
+    public Student(String fullName) {
         this.fullName = fullName;
-        this.tariff = tariff;
     }
 
     @PrePersist
@@ -68,14 +62,6 @@ public class Student {
 
     public void setFullName(String fullName) {
         this.fullName = fullName;
-    }
-
-    public Tariff getTariff() {
-        return tariff;
-    }
-
-    public void setTariff(Tariff tariff) {
-        this.tariff = tariff;
     }
 
     public boolean isActive() {
