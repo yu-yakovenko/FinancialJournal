@@ -36,7 +36,7 @@ public class MonobankIngestionScheduler {
     public PaymentIngestionService.IngestionResult ingest(LocalDate date) {
         try {
             List<StatementItem> statement = monobankClient.loadStatement(date);
-            PaymentIngestionService.IngestionResult result = paymentIngestionService.ingest(statement, date);
+            PaymentIngestionService.IngestionResult result = paymentIngestionService.ingest(statement);
 
             System.out.printf(
                     "Виписка за %s: отримано %d операцій, зараховано %d, на перевірку %d, пропущено %d%n",
@@ -52,6 +52,34 @@ public class MonobankIngestionScheduler {
             System.err.printf(
                     "Не вдалося отримати виписку за %s: %s%n",
                     date,
+                    exception.getMessage()
+            );
+            return new PaymentIngestionService.IngestionResult(0, 0, 0);
+        }
+    }
+
+    /** Manual one-off backfill for a historical date range — see AdminController. */
+    public PaymentIngestionService.IngestionResult backfill(LocalDate from, LocalDate to) {
+        try {
+            List<StatementItem> statement = monobankClient.loadStatement(from, to);
+            PaymentIngestionService.IngestionResult result = paymentIngestionService.ingest(statement);
+
+            System.out.printf(
+                    "Довантаження %s — %s: отримано %d операцій, зараховано %d, на перевірку %d, пропущено %d%n",
+                    from,
+                    to,
+                    statement.size(),
+                    result.matched(),
+                    result.needsReview(),
+                    result.skipped()
+            );
+
+            return result;
+        } catch (Exception exception) {
+            System.err.printf(
+                    "Не вдалося довантажити виписку за %s — %s: %s%n",
+                    from,
+                    to,
                     exception.getMessage()
             );
             return new PaymentIngestionService.IngestionResult(0, 0, 0);

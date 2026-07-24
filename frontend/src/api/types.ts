@@ -84,3 +84,9 @@ export interface PaymentResponse {
   rawComment: string | null;
   parsedPayerName: string | null;
 }
+
+export interface IngestResult {
+  matched: number;
+  needsReview: number;
+  skipped: number;
+}

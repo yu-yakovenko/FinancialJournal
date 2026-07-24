@@ -64,7 +64,7 @@ class PaymentIngestionServiceTest {
         when(studentService.createFromPayment("Іваненко Ольга Петрівна"))
                 .thenReturn(created);
 
-        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item), STATEMENT_DATE);
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
 
         assertThat(result.matched()).isEqualTo(1);
         assertThat(result.needsReview()).isZero();
@@ -89,7 +89,7 @@ class PaymentIngestionServiceTest {
         when(tariffPricingService.plansForAmountAt(eq(170_000L), any(LocalDate.class)))
                 .thenReturn(new TariffPricing.TariffMatchResult(List.of(CHOIR_STANDARD)));
 
-        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item), STATEMENT_DATE);
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
 
         assertThat(result.matched()).isEqualTo(1);
         verify(studentService, never()).createFromPayment(any());
@@ -104,7 +104,7 @@ class PaymentIngestionServiceTest {
     void malformedCommentGoesToNeedsReview() {
         StatementItem item = statementItem("tx-3", 170_000, "Поповнення рахунку");
 
-        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item), STATEMENT_DATE);
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
 
         assertThat(result.needsReview()).isEqualTo(1);
         assertThat(result.matched()).isZero();
@@ -123,7 +123,7 @@ class PaymentIngestionServiceTest {
         when(tariffPricingService.plansForAmountAt(eq(999_900L), any(LocalDate.class)))
                 .thenReturn(new TariffPricing.TariffMatchResult(List.of()));
 
-        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item), STATEMENT_DATE);
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
 
         assertThat(result.needsReview()).isEqualTo(1);
         verify(studentService, never()).findActive();
@@ -139,7 +139,7 @@ class PaymentIngestionServiceTest {
         when(tariffPricingService.plansForAmountAt(eq(170_000L), any(LocalDate.class)))
                 .thenReturn(new TariffPricing.TariffMatchResult(List.of(CHOIR_STANDARD, otherPlanSamePrice)));
 
-        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item), STATEMENT_DATE);
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
 
         assertThat(result.needsReview()).isEqualTo(1);
         verify(studentService, never()).findActive();
@@ -157,7 +157,7 @@ class PaymentIngestionServiceTest {
         when(tariffPricingService.plansForAmountAt(eq(170_000L), any(LocalDate.class)))
                 .thenReturn(new TariffPricing.TariffMatchResult(List.of(CHOIR_STANDARD)));
 
-        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item), STATEMENT_DATE);
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
 
         assertThat(result.needsReview()).isEqualTo(1);
         verify(studentService, never()).createFromPayment(any());
@@ -170,7 +170,7 @@ class PaymentIngestionServiceTest {
 
         when(paymentRepository.existsByMonobankTransactionId("tx-5")).thenReturn(true);
 
-        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item), STATEMENT_DATE);
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
 
         assertThat(result.skipped()).isEqualTo(1);
         verify(paymentRepository, never()).save(any());
@@ -180,7 +180,7 @@ class PaymentIngestionServiceTest {
     void negativeAmountIsSkipped() {
         StatementItem item = statementItem("tx-6", -5_000, "Комісія за обслуговування");
 
-        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item), STATEMENT_DATE);
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
 
         assertThat(result.skipped()).isEqualTo(1);
         verify(paymentRepository, never()).save(any());

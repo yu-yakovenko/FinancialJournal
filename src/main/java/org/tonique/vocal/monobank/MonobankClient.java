@@ -10,8 +10,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -21,6 +23,12 @@ public class MonobankClient {
             "https://api.monobank.ua/personal/statement";
 
     public static final ZoneId KYIV_ZONE = ZoneId.of("Europe/Kyiv");
+
+    /** Monobank's real limit on this endpoint is one request per ~60s per token. */
+    private static final Duration REQUEST_DELAY = Duration.ofSeconds(61);
+
+    /** Monobank's real limit on this endpoint is a 31-day window per request. */
+    private static final int MAX_DAYS_PER_REQUEST = 31;
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -51,8 +59,37 @@ public class MonobankClient {
                 .minusSeconds(1)
                 .toEpochSecond();
 
+        return fetchChunk(from, to);
+    }
+
+    /**
+     * Loads a statement across an arbitrary date range, splitting it into ≤31-day
+     * requests (Monobank's per-request window limit) and pausing between them to
+     * respect Monobank's ~1-request-per-60s rate limit on this endpoint.
+     */
+    public List<StatementItem> loadStatement(LocalDate from, LocalDate to)
+            throws IOException, InterruptedException {
+
+        List<DateRangeChunker.Chunk> chunks = DateRangeChunker.chunk(from, to, MAX_DAYS_PER_REQUEST);
+
+        List<StatementItem> items = new ArrayList<>();
+        for (int i = 0; i < chunks.size(); i++) {
+            if (i > 0) {
+                Thread.sleep(REQUEST_DELAY.toMillis());
+            }
+            DateRangeChunker.Chunk chunk = chunks.get(i);
+            long chunkFrom = chunk.from().atStartOfDay(KYIV_ZONE).toEpochSecond();
+            long chunkTo = chunk.to().plusDays(1).atStartOfDay(KYIV_ZONE).minusSeconds(1).toEpochSecond();
+            items.addAll(fetchChunk(chunkFrom, chunkTo));
+        }
+        return items;
+    }
+
+    private List<StatementItem> fetchChunk(long fromEpoch, long toEpoch)
+            throws IOException, InterruptedException {
+
         URI uri = URI.create(
-                API_URL + "/" + accountId + "/" + from + "/" + to
+                API_URL + "/" + accountId + "/" + fromEpoch + "/" + toEpoch
         );
 
         HttpRequest request = HttpRequest.newBuilder()

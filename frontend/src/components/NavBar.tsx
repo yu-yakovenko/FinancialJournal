@@ -16,6 +16,9 @@ export function NavBar() {
       <NavLink to="/unmatched" className={({ isActive }) => (isActive ? 'active' : '')}>
         Неопрацьовані платежі
       </NavLink>
+      <NavLink to="/admin" className={({ isActive }) => (isActive ? 'active' : '')}>
+        Адміністрування
+      </NavLink>
     </nav>
   );
 }

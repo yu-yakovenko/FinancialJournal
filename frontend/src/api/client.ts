@@ -1,5 +1,6 @@
 import type {
   EnrollmentResponse,
+  IngestResult,
   JournalGrid,
   PaymentDetail,
   PaymentResponse,
@@ -84,6 +85,9 @@ export const api = {
 
   addTariffRate: (id: number, data: { amountUah: number; effectiveFrom?: string }) =>
     request<TariffRate>(`/tariffs/${id}/rates`, { method: 'POST', body: JSON.stringify(data) }),
+
+  backfillPayments: (from: string, to: string) =>
+    request<IngestResult>(`/admin/ingest/backfill?from=${from}&to=${to}`, { method: 'POST' }),
 };
 
 export function formatUah(amountKopiykas: number): string {

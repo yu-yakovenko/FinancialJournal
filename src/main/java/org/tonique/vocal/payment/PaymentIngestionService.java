@@ -2,6 +2,7 @@ package org.tonique.vocal.payment;
 
 import org.springframework.stereotype.Service;
 import org.tonique.vocal.enrollment.EnrollmentService;
+import org.tonique.vocal.monobank.MonobankClient;
 import org.tonique.vocal.monobank.StatementItem;
 import org.tonique.vocal.student.NameMatcher;
 import org.tonique.vocal.student.Student;
@@ -9,6 +10,7 @@ import org.tonique.vocal.student.StudentService;
 import org.tonique.vocal.tariff.TariffPlan;
 import org.tonique.vocal.tariff.TariffPricingService;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -43,14 +45,14 @@ public class PaymentIngestionService {
         this.enrollmentService = enrollmentService;
     }
 
-    public IngestionResult ingest(List<StatementItem> items, LocalDate statementDate) {
+    public IngestionResult ingest(List<StatementItem> items) {
         int matched = 0;
         int needsReview = 0;
         int skipped = 0;
 
         for (StatementItem item : items) {
             try {
-                switch (ingestOne(item, statementDate)) {
+                switch (ingestOne(item)) {
                     case MATCHED -> matched++;
                     case NEEDS_REVIEW -> needsReview++;
                     case SKIPPED -> skipped++;
@@ -62,7 +64,7 @@ public class PaymentIngestionService {
         return new IngestionResult(matched, needsReview, skipped);
     }
 
-    private Result ingestOne(StatementItem item, LocalDate statementDate) {
+    private Result ingestOne(StatementItem item) {
         if (item.amount() <= 0) {
             // outgoing transactions / fees on the account, not tuition income
             return Result.SKIPPED;
@@ -71,7 +73,8 @@ public class PaymentIngestionService {
             return Result.SKIPPED;
         }
 
-        Payment payment = Payment.bank(item.id(), item.amount(), statementDate, item.comment());
+        LocalDate transactionDate = Instant.ofEpochSecond(item.time()).atZone(MonobankClient.KYIV_ZONE).toLocalDate();
+        Payment payment = Payment.bank(item.id(), item.amount(), transactionDate, item.comment());
 
         Optional<PaymentCommentParser.ParsedComment> parsed = PaymentCommentParser.parse(item.comment());
         if (parsed.isEmpty()) {
@@ -83,7 +86,7 @@ public class PaymentIngestionService {
         int declaredMonth = parsed.get().month();
         payment.setParsedPayerName(payerName);
 
-        YearMonth period = resolvePeriod(declaredMonth, statementDate);
+        YearMonth period = resolvePeriod(declaredMonth, transactionDate);
         payment.setPeriodYear(period.getYear());
         payment.setPeriodMonth(period.getMonthValue());
 
@@ -127,9 +130,9 @@ public class PaymentIngestionService {
      * December, or a rare advance payment), shift a year to keep the guess sane.
      * Admins can still correct a wrong guess via PATCH /api/payments/{id}.
      */
-    private YearMonth resolvePeriod(int declaredMonth, LocalDate statementDate) {
-        int transactionMonth = statementDate.getMonthValue();
-        int year = statementDate.getYear();
+    private YearMonth resolvePeriod(int declaredMonth, LocalDate transactionDate) {
+        int transactionMonth = transactionDate.getMonthValue();
+        int year = transactionDate.getYear();
         int diff = declaredMonth - transactionMonth;
         if (diff > 6) {
             year -= 1;
