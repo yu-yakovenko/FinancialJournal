@@ -62,12 +62,26 @@ public class StudentMergeService {
 
     /** Merges every checked student in {@code studentIds}, auto-picking the survivor. */
     public Student mergeGroup(List<Long> studentIds) {
+        return mergeGroup(studentIds, null);
+    }
+
+    /**
+     * Merges every student in {@code studentIds}. If {@code explicitTargetId} is given
+     * (e.g. the user picked "merge into this one" on the student's own edit form), that
+     * student survives regardless of name length; otherwise the survivor is auto-picked.
+     */
+    public Student mergeGroup(List<Long> studentIds, Long explicitTargetId) {
         List<Long> distinctIds = studentIds.stream().distinct().toList();
         if (distinctIds.size() < 2) {
             throw new IllegalArgumentException("Потрібно обрати щонайменше двох студентів для об'єднання");
         }
         List<Student> students = distinctIds.stream().map(studentService::getOrThrow).toList();
-        Student target = pickTarget(students);
+        Student target = explicitTargetId != null
+                ? students.stream()
+                        .filter(s -> s.getId().equals(explicitTargetId))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException("Основний студент має бути серед обраних"))
+                : pickTarget(students);
         List<Long> sourceIds = distinctIds.stream().filter(id -> !id.equals(target.getId())).toList();
         return merge(target.getId(), sourceIds);
     }

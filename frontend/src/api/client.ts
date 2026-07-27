@@ -48,8 +48,8 @@ export const api = {
 
   studentDuplicates: () => request<DuplicateGroup[]>('/students/duplicates'),
 
-  mergeStudents: (studentIds: number[]) =>
-    request<StudentResponse>('/students/merge', { method: 'POST', body: JSON.stringify({ studentIds }) }),
+  mergeStudents: (studentIds: number[], targetId?: number) =>
+    request<StudentResponse>('/students/merge', { method: 'POST', body: JSON.stringify({ studentIds, targetId }) }),
 
   mergeStudentsAuto: () => request<StudentMergeSummary>('/students/merge/auto', { method: 'POST' }),
 

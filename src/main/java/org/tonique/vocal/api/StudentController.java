@@ -73,7 +73,7 @@ public class StudentController {
 
     @PostMapping("/merge")
     public StudentResponse merge(@Valid @RequestBody StudentMergeRequest request) {
-        return toResponse(studentMergeService.mergeGroup(request.studentIds()));
+        return toResponse(studentMergeService.mergeGroup(request.studentIds(), request.targetId()));
     }
 
     @PostMapping("/merge/auto")

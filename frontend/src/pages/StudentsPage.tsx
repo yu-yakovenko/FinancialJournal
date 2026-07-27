@@ -63,6 +63,7 @@ export function StudentsPage() {
       {editing && (
         <StudentForm
           student={editing === 'new' ? undefined : editing}
+          students={students}
           onSubmit={async (data) => {
             if (editing === 'new') {
               await api.createStudent({ fullName: data.fullName });
@@ -72,6 +73,15 @@ export function StudentsPage() {
             setEditing(null);
             reload();
           }}
+          onMerge={
+            editing === 'new'
+              ? undefined
+              : async (otherStudentId) => {
+                  await api.mergeStudents([editing.id, otherStudentId], editing.id);
+                  setEditing(null);
+                  reload();
+                }
+          }
           onCancel={() => setEditing(null)}
         />
       )}

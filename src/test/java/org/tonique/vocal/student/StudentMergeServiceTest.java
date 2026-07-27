@@ -85,6 +85,33 @@ class StudentMergeServiceTest {
     }
 
     @Test
+    void explicitTargetIdWinsEvenOverAShorterName() {
+        Student full = student(1L, "Фурманюк Антон Васильович", Instant.parse("2026-01-01T00:00:00Z"));
+        Student partial = student(2L, "Фурманюк Антон", Instant.parse("2026-02-01T00:00:00Z"));
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(full));
+        when(studentRepository.findById(2L)).thenReturn(Optional.of(partial));
+        when(paymentRepository.findByStudentId(1L)).thenReturn(List.of());
+        when(enrollmentRepository.findByStudentIdOrderByValidFrom(1L)).thenReturn(List.of());
+
+        Student result = mergeService.mergeGroup(List.of(1L, 2L), 2L);
+
+        assertThat(result).isSameAs(partial);
+        verify(studentRepository).delete(full);
+        verify(studentRepository, never()).delete(partial);
+    }
+
+    @Test
+    void explicitTargetIdMustBeAmongTheSelectedStudents() {
+        Student a = student(1L, "Фурманюк Антон Васильович", Instant.parse("2026-01-01T00:00:00Z"));
+        Student b = student(2L, "Фурманюк Антон", Instant.parse("2026-02-01T00:00:00Z"));
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(a));
+        when(studentRepository.findById(2L)).thenReturn(Optional.of(b));
+
+        assertThatThrownBy(() -> mergeService.mergeGroup(List.of(1L, 2L), 99L))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void mergeGroupRequiresAtLeastTwoDistinctStudents() {
         assertThatThrownBy(() -> mergeService.mergeGroup(List.of(1L)))
                 .isInstanceOf(IllegalArgumentException.class);
