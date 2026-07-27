@@ -15,7 +15,30 @@ class PaymentCommentParserTest {
 
         assertThat(result).isPresent();
         assertThat(result.get().month()).isEqualTo(8);
+        assertThat(result.get().year()).isNull();
         assertThat(result.get().payerName()).isEqualTo("Іваненко Ольга Петрівна");
+    }
+
+    @Test
+    void parsesOptionalDeclaredYear() {
+        Optional<PaymentCommentParser.ParsedComment> result =
+                PaymentCommentParser.parse("Оплата за уроки вокалу, червень 2026, Шевченко Олег");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().month()).isEqualTo(6);
+        assertThat(result.get().year()).isEqualTo(2026);
+        assertThat(result.get().payerName()).isEqualTo("Шевченко Олег");
+    }
+
+    @Test
+    void parsesDeclaredYearWithCommaSeparator() {
+        Optional<PaymentCommentParser.ParsedComment> result =
+                PaymentCommentParser.parse("Оплата за уроки вокалу, грудня, 2025, Коваль А. Б.");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().month()).isEqualTo(12);
+        assertThat(result.get().year()).isEqualTo(2025);
+        assertThat(result.get().payerName()).isEqualTo("Коваль А. Б.");
     }
 
     @Test

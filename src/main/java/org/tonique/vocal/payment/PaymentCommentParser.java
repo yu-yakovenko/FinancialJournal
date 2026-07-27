@@ -6,9 +6,10 @@ import java.util.regex.Pattern;
 
 /**
  * Parses the standardized-but-hand-typed payment comment
- * "Оплата за уроки вокалу, МІСЯЦЬ, ПІБ" into a declared month and payer name.
- * Tolerant of missing/extra separators and surrounding whitespace; anything that
- * doesn't fit the expected shape is left unparsed for manual review.
+ * "Оплата за уроки вокалу, МІСЯЦЬ[, РІК], ПІБ" into a declared month, an optional
+ * declared year, and a payer name. Tolerant of missing/extra separators and
+ * surrounding whitespace; anything that doesn't fit the expected shape is left
+ * unparsed for manual review.
  */
 public final class PaymentCommentParser {
 
@@ -17,6 +18,7 @@ public final class PaymentCommentParser {
     private static final Pattern COMMENT_PATTERN = Pattern.compile(
             "^оплата\\s+за\\s+уроки\\s+вокалу\\s*[,;-]?\\s*"
                     + "([А-ЯІЇЄҐа-яіїєґ']+)\\s*[,;-]?\\s*"
+                    + "(?:(\\d{4})\\s*[,;-]?\\s*)?"
                     + "(.+)$",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
     );
@@ -36,15 +38,17 @@ public final class PaymentCommentParser {
         }
 
         String monthToken = matcher.group(1);
-        String payerName = matcher.group(2).trim();
+        String yearToken = matcher.group(2);
+        String payerName = matcher.group(3).trim();
         if (payerName.isEmpty()) {
             return Optional.empty();
         }
 
+        Integer year = yearToken != null ? Integer.valueOf(yearToken) : null;
         return UkrainianMonths.monthNumber(monthToken)
-                .map(month -> new ParsedComment(month, payerName));
+                .map(month -> new ParsedComment(month, year, payerName));
     }
 
-    public record ParsedComment(int month, String payerName) {
+    public record ParsedComment(int month, Integer year, String payerName) {
     }
 }

@@ -95,9 +95,12 @@ public class PaymentIngestionService {
 
         String payerName = parsed.get().payerName();
         int declaredMonth = parsed.get().month();
+        Integer declaredYear = parsed.get().year();
         payment.setParsedPayerName(payerName);
 
-        YearMonth period = resolvePeriod(declaredMonth, transactionDate);
+        YearMonth period = declaredYear != null
+                ? YearMonth.of(declaredYear, declaredMonth)
+                : resolvePeriod(declaredMonth, transactionDate);
         payment.setPeriodYear(period.getYear());
         payment.setPeriodMonth(period.getMonthValue());
 
@@ -163,10 +166,11 @@ public class PaymentIngestionService {
     }
 
     /**
-     * The comment never states a year. Default to the transaction's year; if the
-     * declared month is far from the transaction month (paying in January for
-     * December, or a rare advance payment), shift a year to keep the guess sane.
-     * Admins can still correct a wrong guess via PATCH /api/payments/{id}.
+     * Fallback for when the comment doesn't state a year (most don't). Default to
+     * the transaction's year; if the declared month is far from the transaction
+     * month (paying in January for December, or a rare advance payment), shift a
+     * year to keep the guess sane. Admins can still correct a wrong guess via
+     * PATCH /api/payments/{id}.
      */
     private YearMonth resolvePeriod(int declaredMonth, LocalDate transactionDate) {
         int transactionMonth = transactionDate.getMonthValue();

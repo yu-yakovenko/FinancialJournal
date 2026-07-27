@@ -82,6 +82,26 @@ class PaymentIngestionServiceTest {
     }
 
     @Test
+    void declaredYearInCommentOverridesTheInferredPeriodYear() {
+        Student existing = new Student("Шевченко Олег");
+        StatementItem item = statementItem("tx-11", 170_000,
+                "Оплата за уроки вокалу, грудень 2025, Шевченко Олег");
+
+        when(studentService.findActive()).thenReturn(List.of(existing));
+        when(tariffPricingService.plansForAmountAt(eq(170_000L), eq(LocalDate.of(2025, 12, 1))))
+                .thenReturn(new TariffPricing.TariffMatchResult(List.of(CHOIR_STANDARD)));
+
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
+
+        assertThat(result.matched()).isEqualTo(1);
+        ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(captor.capture());
+        assertThat(captor.getValue().getPeriodYear()).isEqualTo(2025);
+        assertThat(captor.getValue().getPeriodMonth()).isEqualTo(12);
+        verify(enrollmentService).ensureActive(existing, CHOIR_STANDARD, LocalDate.of(2025, 12, 1));
+    }
+
+    @Test
     void matchesExistingStudentBySurnameAndInitialsWithoutCreatingDuplicate() {
         Student existing = new Student("Іваненко Ольга Петрівна");
         StatementItem item = statementItem("tx-2", 170_000,

@@ -67,11 +67,13 @@ These are secrets; never hardcode them or commit real values.
      an acquiring settlement against. Both are found by exact name/label and created on first use if
      missing (with a zero-kopiyka placeholder rate, since acquiring amounts vary per settlement and are
      never matched against a tariff price), so this self-heals on a fresh database with no migration step.
-  5. `PaymentCommentParser` matches `"Оплата за уроки вокалу, МІСЯЦЬ, ПІБ"` against a Unicode-aware regex
-     (`Pattern.UNICODE_CASE` is required — plain `CASE_INSENSITIVE` is ASCII-only and misses capitalized
-     Cyrillic). Unparseable comments → `NEEDS_REVIEW`.
-  6. The declared month has no year; `resolvePeriod` defaults to the transaction's year and shifts by one
-     if the declared month is >6 months away (handles paying in January for December).
+  5. `PaymentCommentParser` matches `"Оплата за уроки вокалу, МІСЯЦЬ[, РІК], ПІБ"` against a Unicode-aware
+     regex (`Pattern.UNICODE_CASE` is required — plain `CASE_INSENSITIVE` is ASCII-only and misses
+     capitalized Cyrillic). The year is optional since most payers omit it. Unparseable comments →
+     `NEEDS_REVIEW`.
+  6. If the comment declared a year, it's used as-is. Otherwise `resolvePeriod` defaults to the
+     transaction's year and shifts by one if the declared month is >6 months away (handles paying in
+     January for December).
   7. **The amount must uniquely identify one tariff plan's price for that period** (via
      `TariffPricingService.plansForAmountAt`) *before* any name matching happens. A student can hold
      several tariffs at once, so there's no single "expected" amount to fall back on — an amount that's
