@@ -9,19 +9,25 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.tonique.vocal.api.dto.DuplicateGroupResponse;
 import org.tonique.vocal.api.dto.EnrollmentCreateRequest;
 import org.tonique.vocal.api.dto.EnrollmentResponse;
 import org.tonique.vocal.api.dto.StudentCreateRequest;
+import org.tonique.vocal.api.dto.StudentMergeRequest;
+import org.tonique.vocal.api.dto.StudentMergeSummaryResponse;
 import org.tonique.vocal.api.dto.StudentResponse;
 import org.tonique.vocal.api.dto.StudentUpdateRequest;
 import org.tonique.vocal.enrollment.EnrollmentService;
 import org.tonique.vocal.enrollment.TariffEnrollment;
+import org.tonique.vocal.payment.Payment;
 import org.tonique.vocal.student.Student;
+import org.tonique.vocal.student.StudentMergeService;
 import org.tonique.vocal.student.StudentService;
 import org.tonique.vocal.tariff.TariffPricingService;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/students")
@@ -30,11 +36,14 @@ public class StudentController {
     private final StudentService studentService;
     private final EnrollmentService enrollmentService;
     private final TariffPricingService tariffPricingService;
+    private final StudentMergeService studentMergeService;
 
-    public StudentController(StudentService studentService, EnrollmentService enrollmentService, TariffPricingService tariffPricingService) {
+    public StudentController(StudentService studentService, EnrollmentService enrollmentService,
+                              TariffPricingService tariffPricingService, StudentMergeService studentMergeService) {
         this.studentService = studentService;
         this.enrollmentService = enrollmentService;
         this.tariffPricingService = tariffPricingService;
+        this.studentMergeService = studentMergeService;
     }
 
     @GetMapping
@@ -55,6 +64,22 @@ public class StudentController {
     @DeleteMapping("/{id}")
     public void deactivate(@PathVariable Long id) {
         studentService.deactivate(id);
+    }
+
+    @GetMapping("/duplicates")
+    public List<DuplicateGroupResponse> duplicates() {
+        return studentMergeService.findDuplicateGroups().stream().map(this::toResponse).toList();
+    }
+
+    @PostMapping("/merge")
+    public StudentResponse merge(@Valid @RequestBody StudentMergeRequest request) {
+        return toResponse(studentMergeService.mergeGroup(request.studentIds()));
+    }
+
+    @PostMapping("/merge/auto")
+    public StudentMergeSummaryResponse mergeAuto() {
+        StudentMergeService.MergeSummary summary = studentMergeService.mergeAutomatically();
+        return new StudentMergeSummaryResponse(summary.mergedGroups(), summary.mergedStudents());
     }
 
     @GetMapping("/{id}/enrollments")
@@ -81,6 +106,26 @@ public class StudentController {
                 activeTariffLabels,
                 student.isActive(),
                 student.getCreatedAt()
+        );
+    }
+
+    private DuplicateGroupResponse toResponse(List<Student> group) {
+        Student recommendedTarget = studentMergeService.pickTarget(group);
+        List<DuplicateGroupResponse.Student> students = group.stream()
+                .map(student -> toDuplicateStudentInfo(student, student.getId().equals(recommendedTarget.getId())))
+                .toList();
+        return new DuplicateGroupResponse(students);
+    }
+
+    private DuplicateGroupResponse.Student toDuplicateStudentInfo(Student student, boolean recommendedTarget) {
+        Optional<Payment> lastPayment = studentMergeService.lastPayment(student.getId());
+        return new DuplicateGroupResponse.Student(
+                student.getId(),
+                student.getFullName(),
+                recommendedTarget,
+                lastPayment.map(Payment::getPaymentDate).orElse(null),
+                lastPayment.map(Payment::getAmountKopiykas).orElse(null),
+                lastPayment.map(Payment::getTariffPlan).map(plan -> plan.getLabel()).orElse(null)
         );
     }
 

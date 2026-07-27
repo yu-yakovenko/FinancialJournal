@@ -80,6 +80,10 @@ public class TariffEnrollment {
         return student;
     }
 
+    public void setStudent(Student student) {
+        this.student = student;
+    }
+
     public TariffPlan getTariffPlan() {
         return tariffPlan;
     }

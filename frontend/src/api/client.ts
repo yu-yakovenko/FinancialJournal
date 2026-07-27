@@ -1,10 +1,12 @@
 import type {
+  DuplicateGroup,
   EnrollmentResponse,
   IngestResult,
   JournalGrid,
   PaymentDetail,
   PaymentResponse,
   ServiceType,
+  StudentMergeSummary,
   StudentResponse,
   TariffPlan,
   TariffRate,
@@ -43,6 +45,13 @@ export const api = {
     request<StudentResponse>(`/students/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   deactivateStudent: (id: number) => request<void>(`/students/${id}`, { method: 'DELETE' }),
+
+  studentDuplicates: () => request<DuplicateGroup[]>('/students/duplicates'),
+
+  mergeStudents: (studentIds: number[]) =>
+    request<StudentResponse>('/students/merge', { method: 'POST', body: JSON.stringify({ studentIds }) }),
+
+  mergeStudentsAuto: () => request<StudentMergeSummary>('/students/merge/auto', { method: 'POST' }),
 
   studentEnrollments: (studentId: number) =>
     request<EnrollmentResponse[]>(`/students/${studentId}/enrollments`),

@@ -90,3 +90,21 @@ export interface IngestResult {
   needsReview: number;
   skipped: number;
 }
+
+export interface DuplicateStudentInfo {
+  id: number;
+  fullName: string;
+  recommendedTarget: boolean;
+  lastPaymentDate: string | null;
+  lastPaymentAmountKopiykas: number | null;
+  lastPaymentTariffLabel: string | null;
+}
+
+export interface DuplicateGroup {
+  students: DuplicateStudentInfo[];
+}
+
+export interface StudentMergeSummary {
+  mergedGroups: number;
+  mergedStudents: number;
+}
