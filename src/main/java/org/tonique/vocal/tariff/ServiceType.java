@@ -2,5 +2,7 @@ package org.tonique.vocal.tariff;
 
 public enum ServiceType {
     INDIVIDUAL,
-    CHOIR
+    GROUP,
+    CHOIR,
+    ACQUIRING
 }

@@ -1,8 +1,10 @@
-export type ServiceType = 'INDIVIDUAL' | 'CHOIR';
+export type ServiceType = 'INDIVIDUAL' | 'GROUP' | 'CHOIR' | 'ACQUIRING';
 
 export const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
   INDIVIDUAL: 'Індивідуальні заняття',
+  GROUP: 'Групові заняття',
   CHOIR: 'Хор',
+  ACQUIRING: 'Еквайринг',
 };
 
 export interface TariffPlan {

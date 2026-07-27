@@ -136,7 +136,9 @@ function CreateTariffPlanForm({
           <label htmlFor="serviceType">Тип послуги</label>
           <select id="serviceType" value={serviceType} onChange={(e) => setServiceType(e.target.value as ServiceType)}>
             <option value="INDIVIDUAL">{SERVICE_TYPE_LABELS.INDIVIDUAL}</option>
+            <option value="GROUP">{SERVICE_TYPE_LABELS.GROUP}</option>
             <option value="CHOIR">{SERVICE_TYPE_LABELS.CHOIR}</option>
+            <option value="ACQUIRING">{SERVICE_TYPE_LABELS.ACQUIRING}</option>
           </select>
         </div>
 
