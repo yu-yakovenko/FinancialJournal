@@ -95,6 +95,9 @@ export const api = {
   addTariffRate: (id: number, data: { amountUah: number; effectiveFrom?: string }) =>
     request<TariffRate>(`/tariffs/${id}/rates`, { method: 'POST', body: JSON.stringify(data) }),
 
+  updateTariffRate: (rateId: number, data: { amountUah: number; effectiveFrom: string }) =>
+    request<TariffRate>(`/tariffs/rates/${rateId}`, { method: 'PUT', body: JSON.stringify(data) }),
+
   backfillPayments: (from: string, to: string) =>
     request<IngestResult>(`/admin/ingest/backfill?from=${from}&to=${to}`, { method: 'POST' }),
 };

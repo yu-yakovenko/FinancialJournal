@@ -13,6 +13,7 @@ import org.tonique.vocal.api.dto.TariffPlanResponse;
 import org.tonique.vocal.api.dto.TariffPlanUpdateRequest;
 import org.tonique.vocal.api.dto.TariffRateCreateRequest;
 import org.tonique.vocal.api.dto.TariffRateResponse;
+import org.tonique.vocal.api.dto.TariffRateUpdateRequest;
 import org.tonique.vocal.tariff.TariffPlan;
 import org.tonique.vocal.tariff.TariffPricingService;
 import org.tonique.vocal.tariff.TariffRate;
@@ -65,6 +66,12 @@ public class TariffController {
                 MoneyConversion.toKopiykas(request.amountUah()),
                 request.effectiveFrom() != null ? request.effectiveFrom() : LocalDate.now()
         );
+        return new TariffRateResponse(rate.getId(), rate.getAmountKopiykas(), rate.getEffectiveFrom());
+    }
+
+    @PutMapping("/rates/{rateId}")
+    public TariffRateResponse updateRate(@PathVariable Long rateId, @Valid @RequestBody TariffRateUpdateRequest request) {
+        TariffRate rate = tariffPricingService.updateRate(rateId, MoneyConversion.toKopiykas(request.amountUah()), request.effectiveFrom());
         return new TariffRateResponse(rate.getId(), rate.getAmountKopiykas(), rate.getEffectiveFrom());
     }
 

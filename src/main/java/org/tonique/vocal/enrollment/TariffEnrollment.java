@@ -92,6 +92,10 @@ public class TariffEnrollment {
         return validFrom;
     }
 
+    public void setValidFrom(LocalDate validFrom) {
+        this.validFrom = validFrom;
+    }
+
     public LocalDate getValidTo() {
         return validTo;
     }

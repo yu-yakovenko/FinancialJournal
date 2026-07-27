@@ -14,9 +14,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 /**
- * One price point in a {@link TariffPlan}'s history. A price change is recorded as
- * a NEW row (never edits an existing one), so past periods keep evaluating against
- * whatever price was actually in effect at the time.
+ * One price point in a {@link TariffPlan}'s history. A genuine price change is
+ * recorded as a NEW row (never edits an existing one), so past periods keep
+ * evaluating against whatever price was actually in effect at the time. The setters
+ * below exist only for {@code TariffPricingService.updateRate}, which lets an admin
+ * correct a data-entry mistake (wrong amount/date typed in) on an existing row —
+ * that's a distinct operation from recording an actual price change.
  */
 @Entity
 @Table(name = "tariff_rates")
@@ -69,6 +72,14 @@ public class TariffRate {
 
     public LocalDate getEffectiveFrom() {
         return effectiveFrom;
+    }
+
+    public void setAmountKopiykas(long amountKopiykas) {
+        this.amountKopiykas = amountKopiykas;
+    }
+
+    public void setEffectiveFrom(LocalDate effectiveFrom) {
+        this.effectiveFrom = effectiveFrom;
     }
 
 }

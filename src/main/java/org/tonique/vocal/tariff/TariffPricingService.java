@@ -72,4 +72,16 @@ public class TariffPricingService {
         TariffPlan plan = getOrThrow(planId);
         return tariffRateRepository.save(new TariffRate(plan, amountKopiykas, effectiveFrom));
     }
+
+    /**
+     * Corrects a data-entry mistake on an already-created rate in place. Unlike
+     * {@link #addRate}, this rewrites history — only use it to fix a wrong
+     * amount/date typed in, never to record an actual price change.
+     */
+    public TariffRate updateRate(Long rateId, long amountKopiykas, LocalDate effectiveFrom) {
+        TariffRate rate = tariffRateRepository.findById(rateId).orElseThrow(() -> new TariffRateNotFoundException(rateId));
+        rate.setAmountKopiykas(amountKopiykas);
+        rate.setEffectiveFrom(effectiveFrom);
+        return tariffRateRepository.save(rate);
+    }
 }

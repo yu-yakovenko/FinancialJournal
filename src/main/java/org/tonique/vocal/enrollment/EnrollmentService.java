@@ -34,11 +34,26 @@ public class EnrollmentService {
      * ingestion and by the admin "add tariff to student" action, so a payment or a
      * manual pick never creates a duplicate active row for a tariff the student is
      * already on.
+     * <p>
+     * If a payment for an earlier period shows up later (e.g. a historical backfill
+     * run after the enrollment already started from a more recent payment),
+     * validFrom is pulled backward to that earlier date — otherwise the backfilled
+     * month would fall outside [validFrom, validTo] and silently disappear from the
+     * journal grid despite the payment being correctly matched.
      */
     public TariffEnrollment ensureActive(Student student, TariffPlan tariffPlan, LocalDate validFrom) {
         return enrollmentRepository
                 .findByStudentIdAndTariffPlanIdAndValidToIsNull(student.getId(), tariffPlan.getId())
+                .map(enrollment -> extendBackwardIfNeeded(enrollment, validFrom))
                 .orElseGet(() -> enrollmentRepository.save(new TariffEnrollment(student, tariffPlan, validFrom)));
+    }
+
+    private TariffEnrollment extendBackwardIfNeeded(TariffEnrollment enrollment, LocalDate validFrom) {
+        if (validFrom.isBefore(enrollment.getValidFrom())) {
+            enrollment.setValidFrom(validFrom);
+            return enrollmentRepository.save(enrollment);
+        }
+        return enrollment;
     }
 
     public TariffEnrollment end(Long id, LocalDate validTo) {

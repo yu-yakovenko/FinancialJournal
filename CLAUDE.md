@@ -94,10 +94,14 @@ a real bug trap here.
 ### Tariffs (`tariff/`)
 
 Tariffs are admin-editable, not a fixed enum. `TariffPlan` is stable identity (label, service type);
-`TariffRate` is one immutable row per price change (`amountKopiykas` + `effectiveFrom`) — changing a price
-never rewrites history. `TariffPricing` is the pure date-aware lookup logic (`amountForPlanAt`,
-`plansForAmountAt`, picks the latest rate with `effectiveFrom <= asOf`); `TariffPricingService` wraps it
-with persistence. `TariffSeeder` seeds the four tariffs that used to be hard-coded, once, on first boot.
+`TariffRate` is one row per price change (`amountKopiykas` + `effectiveFrom`) — a genuine price change is
+recorded via `addRate` as a new row and never rewrites history. `TariffPricingService.updateRate` is a
+separate, narrower path: it edits an existing rate's amount/date in place, meant only for correcting a
+data-entry mistake (typo'd amount or date), not for recording an actual price change — using it for the
+latter would retroactively recolor past journal months. `TariffPricing` is the pure date-aware lookup logic
+(`amountForPlanAt`, `plansForAmountAt`, picks the latest rate with `effectiveFrom <= asOf`);
+`TariffPricingService` wraps it with persistence. `TariffSeeder` seeds the four tariffs that used to be
+hard-coded, once, on first boot.
 
 `TariffPlan` overrides `equals()`/`hashCode()` to be ID-based (with identity fallback pre-persist) —
 without this, the same DB row loaded in separate `@Transactional` calls compares unequal, which silently
@@ -109,7 +113,11 @@ across service boundaries.
 A student can be on several tariffs simultaneously (e.g. choir *and* individual lessons). `TariffEnrollment`
 (student + tariffPlan + `validFrom` + nullable `validTo`, null = currently active) tracks each independently.
 `EnrollmentService.ensureActive` reuses an existing active enrollment for a (student, tariff) pair instead
-of creating duplicates — called both from ingestion and from manual admin actions.
+of creating duplicates — called both from ingestion and from manual admin actions. If the incoming payment's
+period is earlier than the existing enrollment's `validFrom` (a historical backfill arriving after a more
+recent payment already started the enrollment), it pulls `validFrom` back to that earlier date — otherwise
+the backfilled month would fall outside `[validFrom, validTo]` and silently disappear from the journal grid
+despite the payment itself being correctly matched.
 
 ### Journal (`journal/JournalService`)
 

@@ -8,6 +8,7 @@ import org.tonique.vocal.enrollment.EnrollmentNotFoundException;
 import org.tonique.vocal.payment.PaymentNotFoundException;
 import org.tonique.vocal.student.StudentNotFoundException;
 import org.tonique.vocal.tariff.TariffPlanNotFoundException;
+import org.tonique.vocal.tariff.TariffRateNotFoundException;
 
 import java.util.Map;
 
@@ -18,6 +19,7 @@ public class ApiExceptionHandler {
             StudentNotFoundException.class,
             PaymentNotFoundException.class,
             TariffPlanNotFoundException.class,
+            TariffRateNotFoundException.class,
             EnrollmentNotFoundException.class
     })
     public ResponseEntity<Map<String, String>> handleNotFound(RuntimeException exception) {

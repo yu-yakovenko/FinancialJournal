@@ -49,6 +49,20 @@ class EnrollmentServiceTest {
     }
 
     @Test
+    void pullsValidFromBackwardWhenAnEarlierPaymentIsIngestedForAnAlreadyActiveEnrollment() {
+        TariffEnrollment existing = new TariffEnrollment(student, plan, LocalDate.of(2026, 8, 1));
+        when(enrollmentRepository.findByStudentIdAndTariffPlanIdAndValidToIsNull(1L, 10L))
+                .thenReturn(Optional.of(existing));
+        when(enrollmentRepository.save(existing)).thenReturn(existing);
+
+        TariffEnrollment result = enrollmentService.ensureActive(student, plan, LocalDate.of(2026, 1, 1));
+
+        assertThat(result).isSameAs(existing);
+        assertThat(result.getValidFrom()).isEqualTo(LocalDate.of(2026, 1, 1));
+        verify(enrollmentRepository).save(existing);
+    }
+
+    @Test
     void createsANewEnrollmentWhenNoneIsCurrentlyActive() {
         when(enrollmentRepository.findByStudentIdAndTariffPlanIdAndValidToIsNull(1L, 10L))
                 .thenReturn(Optional.empty());

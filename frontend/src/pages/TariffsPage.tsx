@@ -10,6 +10,7 @@ export function TariffsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [historyForPlanId, setHistoryForPlanId] = useState<number | null>(null);
   const [changingPriceFor, setChangingPriceFor] = useState<TariffPlan | null>(null);
+  const [editingPlan, setEditingPlan] = useState<TariffPlan | null>(null);
 
   function reload() {
     api.tariffPlans().then(setPlans).catch((e) => setError(e.message));
@@ -59,6 +60,7 @@ export function TariffsPage() {
                   </span>
                 </td>
                 <td>
+                  <button onClick={() => setEditingPlan(plan)}>Редагувати</button>{' '}
                   <button onClick={() => setChangingPriceFor(plan)}>Змінити ціну</button>{' '}
                   <button onClick={() => setHistoryForPlanId(plan.id)}>Історія цін</button>{' '}
                   <button onClick={() => toggleActive(plan)}>{plan.active ? 'Деактивувати' : 'Активувати'}</button>
@@ -80,6 +82,18 @@ export function TariffsPage() {
         />
       )}
 
+      {editingPlan && (
+        <EditTariffPlanForm
+          plan={editingPlan}
+          onSubmit={async (label) => {
+            await api.updateTariffPlan(editingPlan.id, { label, active: editingPlan.active });
+            setEditingPlan(null);
+            reload();
+          }}
+          onCancel={() => setEditingPlan(null)}
+        />
+      )}
+
       {changingPriceFor && (
         <ChangePriceForm
           plan={changingPriceFor}
@@ -93,8 +107,54 @@ export function TariffsPage() {
       )}
 
       {historyForPlanId !== null && (
-        <PriceHistoryModal planId={historyForPlanId} onClose={() => setHistoryForPlanId(null)} />
+        <PriceHistoryModal planId={historyForPlanId} onClose={() => setHistoryForPlanId(null)} onRateChanged={reload} />
       )}
+    </div>
+  );
+}
+
+function EditTariffPlanForm({
+  plan,
+  onSubmit,
+  onCancel,
+}: {
+  plan: TariffPlan;
+  onSubmit: (label: string) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [label, setLabel] = useState(plan.label);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      await onSubmit(label.trim());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onCancel}>
+      <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+        <h3>Редагувати тариф</h3>
+        {error && <div className="error-banner">{error}</div>}
+
+        <div className="form-row">
+          <label htmlFor="editLabel">Назва</label>
+          <input id="editLabel" value={label} onChange={(e) => setLabel(e.target.value)} required />
+        </div>
+
+        <div className="toolbar">
+          <button type="submit" className="primary" disabled={saving}>{saving ? 'Збереження…' : 'Зберегти'}</button>
+          <button type="button" onClick={onCancel}>Скасувати</button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -222,13 +282,24 @@ function ChangePriceForm({
   );
 }
 
-function PriceHistoryModal({ planId, onClose }: { planId: number; onClose: () => void }) {
+function PriceHistoryModal({
+  planId,
+  onClose,
+  onRateChanged,
+}: {
+  planId: number;
+  onClose: () => void;
+  onRateChanged: () => void;
+}) {
   const [rates, setRates] = useState<TariffRate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingRate, setEditingRate] = useState<TariffRate | null>(null);
 
-  useEffect(() => {
+  function reloadRates() {
     api.tariffRates(planId).then(setRates).catch((e) => setError(e.message));
-  }, [planId]);
+  }
+
+  useEffect(reloadRates, [planId]);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -242,6 +313,7 @@ function PriceHistoryModal({ planId, onClose }: { planId: number; onClose: () =>
               <tr>
                 <th>Чинний з</th>
                 <th>Ціна</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -249,6 +321,7 @@ function PriceHistoryModal({ planId, onClose }: { planId: number; onClose: () =>
                 <tr key={rate.id}>
                   <td>{rate.effectiveFrom}</td>
                   <td>{formatUah(rate.amountKopiykas)} грн</td>
+                  <td><button onClick={() => setEditingRate(rate)}>Редагувати</button></td>
                 </tr>
               ))}
             </tbody>
@@ -258,6 +331,81 @@ function PriceHistoryModal({ planId, onClose }: { planId: number; onClose: () =>
           <button onClick={onClose}>Закрити</button>
         </div>
       </div>
+
+      {editingRate && (
+        <EditRateForm
+          rate={editingRate}
+          onSubmit={async (data) => {
+            await api.updateTariffRate(editingRate.id, data);
+            setEditingRate(null);
+            reloadRates();
+            onRateChanged();
+          }}
+          onCancel={() => setEditingRate(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditRateForm({
+  rate,
+  onSubmit,
+  onCancel,
+}: {
+  rate: TariffRate;
+  onSubmit: (data: { amountUah: number; effectiveFrom: string }) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [amountUah, setAmountUah] = useState(String(rate.amountKopiykas / 100));
+  const [effectiveFrom, setEffectiveFrom] = useState(rate.effectiveFrom);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      await onSubmit({ amountUah: Number(amountUah), effectiveFrom });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onCancel}>
+      <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+        <h3>Редагувати запис ціни</h3>
+        <p className="muted">
+          Це виправляє вже створений запис (не додає новий) — використовуй лише для виправлення помилки, а не
+          для оголошення нової ціни.
+        </p>
+        {error && <div className="error-banner">{error}</div>}
+
+        <div className="form-row">
+          <label htmlFor="editAmount">Ціна, грн</label>
+          <input id="editAmount" type="number" step="0.01" min="0.01" value={amountUah} onChange={(e) => setAmountUah(e.target.value)} required />
+        </div>
+
+        <div className="form-row">
+          <label htmlFor="editEffectiveFrom">Чинний з</label>
+          <input
+            id="editEffectiveFrom"
+            type="date"
+            value={effectiveFrom}
+            onChange={(e) => setEffectiveFrom(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="toolbar">
+          <button type="submit" className="primary" disabled={saving}>{saving ? 'Збереження…' : 'Зберегти'}</button>
+          <button type="button" onClick={onCancel}>Скасувати</button>
+        </div>
+      </form>
     </div>
   );
 }
