@@ -18,9 +18,11 @@ import org.tonique.vocal.tariff.TariffPricingService;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -174,6 +176,54 @@ class PaymentIngestionServiceTest {
 
         assertThat(result.skipped()).isEqualTo(1);
         verify(paymentRepository, never()).save(any());
+    }
+
+    @Test
+    void acquiringSettlementRoutesToTheDedicatedStudentAndTariffWithoutNormalParsing() {
+        Student acquiringStudent = new Student("Еквайринг");
+        TariffPlan acquiringTariff = new TariffPlan(ServiceType.ACQUIRING, "Еквайринг");
+        StatementItem item = statementItem("tx-9", 38_800,
+                "Покриття за проведені трансакції згідно договору еквайринга BB001852, Загалом 400 грн. Комісія банку 12 грн.");
+
+        when(studentService.findByFullName("Еквайринг")).thenReturn(Optional.of(acquiringStudent));
+        when(tariffPricingService.findByLabel("Еквайринг")).thenReturn(Optional.of(acquiringTariff));
+
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
+
+        assertThat(result.matched()).isEqualTo(1);
+        verify(studentService, never()).findActive();
+        verify(tariffPricingService, never()).plansForAmountAt(anyLong(), any(LocalDate.class));
+
+        ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(captor.capture());
+        assertThat(captor.getValue().getMatchStatus()).isEqualTo(PaymentMatchStatus.MATCHED);
+        assertThat(captor.getValue().getStudent()).isEqualTo(acquiringStudent);
+        assertThat(captor.getValue().getTariffPlan()).isEqualTo(acquiringTariff);
+        assertThat(captor.getValue().getPeriodYear()).isEqualTo(2026);
+        assertThat(captor.getValue().getPeriodMonth()).isEqualTo(8);
+        verify(enrollmentService).ensureActive(acquiringStudent, acquiringTariff, STATEMENT_DATE);
+    }
+
+    @Test
+    void acquiringSettlementCreatesTheStudentAndTariffOnFirstUseIfMissing() {
+        StatementItem item = statementItem("tx-10", 19_400,
+                "Покриття за проведені трансакції згідно договору Еквайринга BB001852, Загалом 200 грн. Комісія банку 6 грн.");
+        Student created = new Student("Еквайринг");
+        TariffPlan createdTariff = new TariffPlan(ServiceType.ACQUIRING, "Еквайринг");
+
+        when(studentService.findByFullName("Еквайринг")).thenReturn(Optional.empty());
+        when(studentService.create("Еквайринг")).thenReturn(created);
+        when(tariffPricingService.findByLabel("Еквайринг")).thenReturn(Optional.empty());
+        when(tariffPricingService.createPlan(ServiceType.ACQUIRING, "Еквайринг", 0L, LocalDate.of(2020, 1, 1)))
+                .thenReturn(createdTariff);
+
+        PaymentIngestionService.IngestionResult result = ingestionService.ingest(List.of(item));
+
+        assertThat(result.matched()).isEqualTo(1);
+        ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(captor.capture());
+        assertThat(captor.getValue().getStudent()).isEqualTo(created);
+        assertThat(captor.getValue().getTariffPlan()).isEqualTo(createdTariff);
     }
 
     @Test

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -18,6 +19,11 @@ public class StudentService {
     @Transactional(readOnly = true)
     public List<Student> findActive() {
         return studentRepository.findByActiveTrueOrderByFullName();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Student> findByFullName(String fullName) {
+        return studentRepository.findByFullName(fullName);
     }
 
     @Transactional(readOnly = true)

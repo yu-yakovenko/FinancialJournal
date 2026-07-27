@@ -7,6 +7,7 @@ import org.tonique.vocal.monobank.StatementItem;
 import org.tonique.vocal.student.NameMatcher;
 import org.tonique.vocal.student.Student;
 import org.tonique.vocal.student.StudentService;
+import org.tonique.vocal.tariff.ServiceType;
 import org.tonique.vocal.tariff.TariffPlan;
 import org.tonique.vocal.tariff.TariffPricingService;
 
@@ -15,6 +16,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Turns raw Monobank statement items into Payment records: parses the declared
@@ -27,6 +29,11 @@ import java.util.Optional;
  */
 @Service
 public class PaymentIngestionService {
+
+    /** Matches Monobank's settlement comment ("...згідно договору еквайринга...") regardless of case/declension. */
+    private static final Pattern ACQUIRING_KEYWORD = Pattern.compile("еквайринг", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+    private static final String ACQUIRING_NAME = "Еквайринг";
+    private static final LocalDate ACQUIRING_TARIFF_BASELINE = LocalDate.of(2020, 1, 1);
 
     private final PaymentRepository paymentRepository;
     private final StudentService studentService;
@@ -76,6 +83,10 @@ public class PaymentIngestionService {
         LocalDate transactionDate = Instant.ofEpochSecond(item.time()).atZone(MonobankClient.KYIV_ZONE).toLocalDate();
         Payment payment = Payment.bank(item.id(), item.amount(), transactionDate, item.comment());
 
+        if (item.comment() != null && ACQUIRING_KEYWORD.matcher(item.comment()).find()) {
+            return ingestAcquiring(payment, transactionDate);
+        }
+
         Optional<PaymentCommentParser.ParsedComment> parsed = PaymentCommentParser.parse(item.comment());
         if (parsed.isEmpty()) {
             paymentRepository.save(payment);
@@ -119,6 +130,33 @@ public class PaymentIngestionService {
         enrollmentService.ensureActive(student, tariffPlan.get(), period.atDay(1));
         payment.setStudent(student);
         payment.setTariffPlan(tariffPlan.get());
+        payment.setMatchStatus(PaymentMatchStatus.MATCHED);
+        paymentRepository.save(payment);
+        return Result.MATCHED;
+    }
+
+    /**
+     * Monobank settles card-payment acquiring fees as their own statement line
+     * ("Покриття за проведені трансакції згідно договору еквайринга..."), not a
+     * student's tuition — these always route to a dedicated "Еквайринг" student and
+     * tariff rather than the normal comment-parsing/amount-matching flow, since
+     * there's no declared month/payer or a single expected price to check against.
+     * Finds the student/tariff by name if an admin already created them, otherwise
+     * creates them (with a zero-kopiyka placeholder rate, since acquiring amounts
+     * vary per settlement and are never checked against a tariff price) so this
+     * self-heals on a fresh database without a migration step.
+     */
+    private Result ingestAcquiring(Payment payment, LocalDate transactionDate) {
+        Student student = studentService.findByFullName(ACQUIRING_NAME)
+                .orElseGet(() -> studentService.create(ACQUIRING_NAME));
+        TariffPlan tariffPlan = tariffPricingService.findByLabel(ACQUIRING_NAME)
+                .orElseGet(() -> tariffPricingService.createPlan(ServiceType.ACQUIRING, ACQUIRING_NAME, 0L, ACQUIRING_TARIFF_BASELINE));
+
+        enrollmentService.ensureActive(student, tariffPlan, transactionDate);
+        payment.setStudent(student);
+        payment.setTariffPlan(tariffPlan);
+        payment.setPeriodYear(transactionDate.getYear());
+        payment.setPeriodMonth(transactionDate.getMonthValue());
         payment.setMatchStatus(PaymentMatchStatus.MATCHED);
         paymentRepository.save(payment);
         return Result.MATCHED;

@@ -30,6 +30,11 @@ public class TariffPricingService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<TariffPlan> findByLabel(String label) {
+        return tariffPlanRepository.findByLabel(label);
+    }
+
+    @Transactional(readOnly = true)
     public List<TariffRate> ratesForPlan(Long planId) {
         return tariffRateRepository.findByTariffPlanIdOrderByEffectiveFromDesc(planId);
     }

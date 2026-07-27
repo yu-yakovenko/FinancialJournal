@@ -60,18 +60,25 @@ These are secrets; never hardcode them or commit real values.
      unique DB constraint backs this, so re-running a backfill over an already-ingested range is safe).
   2. Each item's own `time` (epoch seconds) — not a shared batch date — determines its transaction date,
      so a single backfill request spanning many months still resolves periods correctly.
-  3. `PaymentCommentParser` matches `"Оплата за уроки вокалу, МІСЯЦЬ, ПІБ"` against a Unicode-aware regex
+  3. A comment containing "еквайринг" (Monobank's card-acquiring settlement line, e.g. "Покриття за
+     проведені трансакції згідно договору еквайринга...") skips the rest of the pipeline entirely and
+     routes straight to a dedicated "Еквайринг" student + `ServiceType.ACQUIRING` tariff (period = the
+     transaction's own month/year) — there's no declared payer/month or single expected price to check
+     an acquiring settlement against. Both are found by exact name/label and created on first use if
+     missing (with a zero-kopiyka placeholder rate, since acquiring amounts vary per settlement and are
+     never matched against a tariff price), so this self-heals on a fresh database with no migration step.
+  5. `PaymentCommentParser` matches `"Оплата за уроки вокалу, МІСЯЦЬ, ПІБ"` against a Unicode-aware regex
      (`Pattern.UNICODE_CASE` is required — plain `CASE_INSENSITIVE` is ASCII-only and misses capitalized
      Cyrillic). Unparseable comments → `NEEDS_REVIEW`.
-  4. The declared month has no year; `resolvePeriod` defaults to the transaction's year and shifts by one
+  6. The declared month has no year; `resolvePeriod` defaults to the transaction's year and shifts by one
      if the declared month is >6 months away (handles paying in January for December).
-  5. **The amount must uniquely identify one tariff plan's price for that period** (via
+  7. **The amount must uniquely identify one tariff plan's price for that period** (via
      `TariffPricingService.plansForAmountAt`) *before* any name matching happens. A student can hold
      several tariffs at once, so there's no single "expected" amount to fall back on — an amount that's
      ambiguous or matches no plan goes straight to `NEEDS_REVIEW` without even touching the roster.
-  6. `NameMatcher` then matches the payer name against the active student roster; zero candidates
+  8. `NameMatcher` then matches the payer name against the active student roster; zero candidates
      auto-creates a `Student`, more than one is `NEEDS_REVIEW`, exactly one links the payment.
-  7. `EnrollmentService.ensureActive` links student↔tariff for that period.
+  9. `EnrollmentService.ensureActive` links student↔tariff for that period.
 - Anything left `NEEDS_REVIEW` is fixed up manually via `PaymentController` (`resolve`, `ignore`, `patch`).
 
 ### Name matching (`student/NameMatcher`)
