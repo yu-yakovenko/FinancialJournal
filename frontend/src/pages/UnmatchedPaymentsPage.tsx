@@ -111,7 +111,7 @@ function UnmatchedPaymentRow({
       <div className="toolbar">
         <select value={studentId} onChange={(e) => setStudentId(e.target.value ? Number(e.target.value) : '')}>
           <option value="">Оберіть студента</option>
-          {students.map((s) => (
+          {[...students].sort((a, b) => a.fullName.localeCompare(b.fullName, 'uk')).map((s) => (
             <option key={s.id} value={s.id}>{s.fullName}</option>
           ))}
         </select>
