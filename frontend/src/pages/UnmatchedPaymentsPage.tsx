@@ -57,7 +57,8 @@ function UnmatchedPaymentRow({
   onResolved: () => void;
 }) {
   const now = new Date();
-  const [studentId, setStudentId] = useState<number | ''>('');
+  const [studentId, setStudentId] = useState<number | 'new' | ''>('');
+  const [newStudentName, setNewStudentName] = useState(payment.parsedPayerName ?? '');
   const [tariffPlanId, setTariffPlanId] = useState<number | ''>('');
   const [periodYear, setPeriodYear] = useState(payment.periodYear ?? now.getFullYear());
   const [periodMonth, setPeriodMonth] = useState(payment.periodMonth ?? now.getMonth() + 1);
@@ -69,6 +70,10 @@ function UnmatchedPaymentRow({
       setError('Оберіть студента');
       return;
     }
+    if (studentId === 'new' && !newStudentName.trim()) {
+      setError("Введіть ПІБ нового студента");
+      return;
+    }
     if (!tariffPlanId) {
       setError('Оберіть тариф');
       return;
@@ -76,7 +81,10 @@ function UnmatchedPaymentRow({
     setBusy(true);
     setError(null);
     try {
-      await api.resolvePayment(payment.id, { studentId, tariffPlanId, periodYear, periodMonth });
+      const resolvedStudentId = studentId === 'new'
+        ? (await api.createStudent({ fullName: newStudentName.trim() })).id
+        : studentId;
+      await api.resolvePayment(payment.id, { studentId: resolvedStudentId, tariffPlanId, periodYear, periodMonth });
       onResolved();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -109,12 +117,23 @@ function UnmatchedPaymentRow({
       </div>
       {error && <div className="error-banner">{error}</div>}
       <div className="toolbar">
-        <select value={studentId} onChange={(e) => setStudentId(e.target.value ? Number(e.target.value) : '')}>
+        <select
+          value={studentId}
+          onChange={(e) => setStudentId(e.target.value === 'new' ? 'new' : e.target.value ? Number(e.target.value) : '')}
+        >
           <option value="">Оберіть студента</option>
+          <option value="new">+ Новий студент…</option>
           {[...students].sort((a, b) => a.fullName.localeCompare(b.fullName, 'uk')).map((s) => (
             <option key={s.id} value={s.id}>{s.fullName}</option>
           ))}
         </select>
+        {studentId === 'new' && (
+          <input
+            value={newStudentName}
+            onChange={(e) => setNewStudentName(e.target.value)}
+            placeholder="ПІБ нового студента"
+          />
+        )}
         <select value={tariffPlanId} onChange={(e) => setTariffPlanId(e.target.value ? Number(e.target.value) : '')}>
           <option value="">Оберіть тариф</option>
           {tariffPlans.filter((p) => p.active).map((p) => (
