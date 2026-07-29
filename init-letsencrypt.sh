@@ -24,27 +24,29 @@ if [ -n "$EMAIL" ]; then
 fi
 
 echo "### Creating a dummy self-signed cert so nginx can start ###"
-docker compose run --rm --entrypoint "\
+# --entrypoint with a shell-operator string ("&&") silently truncates at the
+# operator instead of running it as a shell would — must route through
+# `sh -c` explicitly to get real shell semantics.
+docker compose run --rm --entrypoint sh certbot -c "\
   mkdir -p /etc/letsencrypt/live/$DOMAIN && \
   openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
     -keyout /etc/letsencrypt/live/$DOMAIN/privkey.pem \
     -out /etc/letsencrypt/live/$DOMAIN/fullchain.pem \
-    -subj '/CN=localhost'" certbot
+    -subj '/CN=localhost'"
 
 echo "### Starting all services (frontend will start clean using the dummy cert) ###"
 docker compose up -d --build
 
 echo "### Deleting dummy cert, requesting the real one from Let's Encrypt ###"
-docker compose run --rm --entrypoint "\
+docker compose run --rm --entrypoint sh certbot -c "\
   rm -rf /etc/letsencrypt/live/$DOMAIN && \
   rm -rf /etc/letsencrypt/archive/$DOMAIN && \
-  rm -rf /etc/letsencrypt/renewal/$DOMAIN.conf" certbot
+  rm -rf /etc/letsencrypt/renewal/$DOMAIN.conf"
 
-docker compose run --rm --entrypoint "\
-  certbot certonly --webroot -w /var/www/certbot \
-    -d $DOMAIN \
+docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
+    -d "$DOMAIN" \
     $EMAIL_ARG \
-    --agree-tos --non-interactive" certbot
+    --agree-tos --non-interactive
 
 echo "### Reloading nginx with the real certificate ###"
 docker compose exec frontend nginx -s reload
