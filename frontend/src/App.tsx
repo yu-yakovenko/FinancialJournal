@@ -3,6 +3,7 @@ import { NavBar } from './components/NavBar';
 import { JournalPage } from './pages/JournalPage';
 import { StudentsPage } from './pages/StudentsPage';
 import { TariffsPage } from './pages/TariffsPage';
+import { PaymentsPage } from './pages/PaymentsPage';
 import { UnmatchedPaymentsPage } from './pages/UnmatchedPaymentsPage';
 import { AdminPage } from './pages/AdminPage';
 
@@ -14,6 +15,7 @@ function App() {
         <Route path="/" element={<JournalPage />} />
         <Route path="/students" element={<StudentsPage />} />
         <Route path="/tariffs" element={<TariffsPage />} />
+        <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/unmatched" element={<UnmatchedPaymentsPage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Routes>

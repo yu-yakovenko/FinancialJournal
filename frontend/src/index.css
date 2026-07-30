@@ -452,6 +452,10 @@ nav.app-nav a.active {
   background: var(--status-red);
 }
 
+.status-badge.status-yellow .dot {
+  background: var(--yellow-text);
+}
+
 .empty-state {
   text-align: center;
   padding: 48px 24px;

@@ -75,10 +75,15 @@ export const api = {
     comment?: string;
   }) => request<PaymentResponse>('/payments/cash', { method: 'POST', body: JSON.stringify(data) }),
 
+  allPayments: () => request<PaymentResponse[]>('/payments'),
+
   unmatchedPayments: () => request<PaymentResponse[]>('/payments/unmatched'),
 
   resolvePayment: (id: number, data: { studentId: number; tariffPlanId: number; periodYear: number; periodMonth: number }) =>
     request<PaymentResponse>(`/payments/${id}/resolve`, { method: 'POST', body: JSON.stringify(data) }),
+
+  patchPayment: (id: number, data: { studentId?: number; tariffPlanId?: number; periodYear?: number; periodMonth?: number }) =>
+    request<PaymentResponse>(`/payments/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   ignorePayment: (id: number) => request<PaymentResponse>(`/payments/${id}/ignore`, { method: 'POST' }),
 
