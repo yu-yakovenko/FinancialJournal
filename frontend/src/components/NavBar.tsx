@@ -13,6 +13,9 @@ export function NavBar() {
       <NavLink to="/tariffs" className={({ isActive }) => (isActive ? 'active' : '')}>
         Тарифи
       </NavLink>
+      <NavLink to="/payments" className={({ isActive }) => (isActive ? 'active' : '')}>
+        Усі платежі
+      </NavLink>
       <NavLink to="/unmatched" className={({ isActive }) => (isActive ? 'active' : '')}>
         Неопрацьовані платежі
       </NavLink>

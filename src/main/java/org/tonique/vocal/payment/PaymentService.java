@@ -38,6 +38,11 @@ public class PaymentService {
         return paymentRepository.findByMatchStatusOrderByPaymentDateDesc(PaymentMatchStatus.NEEDS_REVIEW);
     }
 
+    @Transactional(readOnly = true)
+    public List<Payment> listAll() {
+        return paymentRepository.findAllByOrderByPaymentDateDesc();
+    }
+
     public Payment addCash(Long studentId, Long tariffPlanId, long amountKopiykas, LocalDate paymentDate,
                             int periodYear, int periodMonth, String comment) {
         Student student = studentService.getOrThrow(studentId);

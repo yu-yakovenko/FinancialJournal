@@ -46,6 +46,11 @@ public class PaymentController {
         );
     }
 
+    @GetMapping
+    public List<PaymentResponse> all() {
+        return paymentService.listAll().stream().map(PaymentResponse::from).toList();
+    }
+
     @GetMapping("/unmatched")
     public List<PaymentResponse> unmatched() {
         return paymentService.listUnmatched().stream().map(PaymentResponse::from).toList();

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, formatUah } from '../api/client';
-import type { PaymentDetail } from '../api/types';
+import type { PaymentDetail, PaymentResponse, StudentResponse, TariffPlan } from '../api/types';
+import { PaymentEditForm } from './PaymentEditForm';
 
 interface Props {
   studentId: number;
@@ -9,7 +10,10 @@ interface Props {
   tariffLabel: string;
   year: number;
   month: number;
+  students: StudentResponse[];
+  tariffPlans: TariffPlan[];
   onClose: () => void;
+  onChanged: () => void;
 }
 
 const MONTH_NAMES = [
@@ -17,15 +21,45 @@ const MONTH_NAMES = [
   'липень', 'серпень', 'вересень', 'жовтень', 'листопад', 'грудень',
 ];
 
-export function PaymentDetailModal({ studentId, tariffPlanId, fullName, tariffLabel, year, month, onClose }: Props) {
+function toPaymentResponse(payment: PaymentDetail, studentId: number, tariffPlanId: number, tariffLabel: string, year: number, month: number): PaymentResponse {
+  return {
+    id: payment.id,
+    studentId,
+    tariffPlanId,
+    tariffLabel,
+    source: payment.source,
+    matchStatus: 'MATCHED',
+    amountKopiykas: payment.amountKopiykas,
+    paymentDate: payment.paymentDate,
+    periodYear: year,
+    periodMonth: month,
+    rawComment: payment.comment,
+    parsedPayerName: null,
+  };
+}
+
+export function PaymentDetailModal({
+  studentId, tariffPlanId, fullName, tariffLabel, year, month, students, tariffPlans, onClose, onChanged,
+}: Props) {
   const [payments, setPayments] = useState<PaymentDetail[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<PaymentDetail | null>(null);
 
-  useEffect(() => {
+  function reload() {
     api.studentPayments(studentId, tariffPlanId, year, month)
       .then(setPayments)
       .catch((e) => setError(e.message));
-  }, [studentId, tariffPlanId, year, month]);
+  }
+
+  useEffect(reload, [studentId, tariffPlanId, year, month]);
+
+  async function handleSave(data: { studentId?: number; tariffPlanId?: number; periodYear?: number; periodMonth?: number }) {
+    if (!editing) return;
+    await api.patchPayment(editing.id, data);
+    setEditing(null);
+    reload();
+    onChanged();
+  }
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -42,6 +76,7 @@ export function PaymentDetailModal({ studentId, tariffPlanId, fullName, tariffLa
                 <th>Сума</th>
                 <th>Джерело</th>
                 <th>Коментар</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -51,6 +86,9 @@ export function PaymentDetailModal({ studentId, tariffPlanId, fullName, tariffLa
                   <td>{formatUah(payment.amountKopiykas)} грн</td>
                   <td>{payment.source === 'CASH' ? 'Готівка' : 'Банк'}</td>
                   <td>{payment.comment ?? '—'}</td>
+                  <td>
+                    <button onClick={() => setEditing(payment)}>Редагувати</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -60,6 +98,16 @@ export function PaymentDetailModal({ studentId, tariffPlanId, fullName, tariffLa
           <button onClick={onClose}>Закрити</button>
         </div>
       </div>
+
+      {editing && (
+        <PaymentEditForm
+          payment={toPaymentResponse(editing, studentId, tariffPlanId, tariffLabel, year, month)}
+          students={students}
+          tariffPlans={tariffPlans}
+          onSubmit={handleSave}
+          onCancel={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }

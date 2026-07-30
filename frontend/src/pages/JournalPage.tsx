@@ -81,7 +81,10 @@ export function JournalPage() {
           tariffLabel={detail.tariffLabel}
           year={year}
           month={detail.month}
+          students={students}
+          tariffPlans={tariffPlans}
           onClose={() => setDetail(null)}
+          onChanged={reload}
         />
       )}
 
