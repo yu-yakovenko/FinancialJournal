@@ -39,7 +39,7 @@ jobs:
             "$SERVER_USER@$SERVER_HOST" << 'EOF'
               set -e
 
-              cd /root/finjournal
+              cd /root/finjournal/FinancialJournal
 
               git fetch origin main
               git checkout main
