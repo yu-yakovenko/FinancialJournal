@@ -1,4 +1,51 @@
-name: deploy.yml
+name: Deploy to Hetzner
+
 on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
 
 jobs:
+  deploy:
+    name: Deploy production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH
+        env:
+          SERVER_SSH_KEY: ${{ secrets.HETZNER_PRIVATE_SSH_KEY }}
+          SERVER_KNOWN_HOSTS: ${{ secrets.SERVER_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          printf '%s\n' "$SERVER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy application
+        env:
+          SERVER_HOST: ${{ secrets.HETZNER_HOST }}
+          SERVER_USER: ${{ secrets.HETZNER_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/deploy_key \
+            "$SERVER_USER@$SERVER_HOST" << 'EOF'
+              set -e
+
+              cd /root/finjournal
+
+              git fetch origin main
+              git checkout main
+              git reset --hard origin/main
+
+              docker compose up -d --build --remove-orphans
+
+              docker compose ps
+          EOF
