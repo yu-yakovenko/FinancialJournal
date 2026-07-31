@@ -71,7 +71,8 @@ public class PaymentService {
         return paymentRepository.save(payment);
     }
 
-    public Payment patch(Long paymentId, Long studentId, Long tariffPlanId, Integer periodYear, Integer periodMonth) {
+    public Payment patch(Long paymentId, Long studentId, Long tariffPlanId, Integer periodYear, Integer periodMonth,
+                          PaymentMatchStatus matchStatus) {
         Payment payment = getOrThrow(paymentId);
         if (studentId != null) {
             payment.setStudent(studentService.getOrThrow(studentId));
@@ -84,6 +85,9 @@ public class PaymentService {
         }
         if (periodMonth != null) {
             payment.setPeriodMonth(periodMonth);
+        }
+        if (matchStatus != null) {
+            payment.setMatchStatus(matchStatus);
         }
         return paymentRepository.save(payment);
     }

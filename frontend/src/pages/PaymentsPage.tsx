@@ -86,7 +86,13 @@ export function PaymentsPage() {
   const currentPage = Math.min(page, totalPages);
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  async function handleSave(data: { studentId?: number; tariffPlanId?: number; periodYear?: number; periodMonth?: number }) {
+  async function handleSave(data: {
+    studentId?: number;
+    tariffPlanId?: number;
+    periodYear?: number;
+    periodMonth?: number;
+    matchStatus?: PaymentMatchStatus;
+  }) {
     if (!editing) return;
     await api.patchPayment(editing.id, data);
     setEditing(null);

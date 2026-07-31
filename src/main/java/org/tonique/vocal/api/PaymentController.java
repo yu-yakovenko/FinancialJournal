@@ -42,7 +42,8 @@ public class PaymentController {
     @PatchMapping("/{id}")
     public PaymentResponse patch(@PathVariable Long id, @RequestBody PaymentPatchRequest request) {
         return PaymentResponse.from(
-                paymentService.patch(id, request.studentId(), request.tariffPlanId(), request.periodYear(), request.periodMonth())
+                paymentService.patch(id, request.studentId(), request.tariffPlanId(), request.periodYear(),
+                        request.periodMonth(), request.matchStatus())
         );
     }
 
