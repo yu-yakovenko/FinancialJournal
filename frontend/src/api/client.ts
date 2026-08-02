@@ -4,6 +4,7 @@ import type {
   IngestResult,
   JournalGrid,
   PaymentDetail,
+  PaymentMatchStatus,
   PaymentResponse,
   ServiceType,
   StudentMergeSummary,
@@ -82,8 +83,13 @@ export const api = {
   resolvePayment: (id: number, data: { studentId: number; tariffPlanId: number; periodYear: number; periodMonth: number }) =>
     request<PaymentResponse>(`/payments/${id}/resolve`, { method: 'POST', body: JSON.stringify(data) }),
 
-  patchPayment: (id: number, data: { studentId?: number; tariffPlanId?: number; periodYear?: number; periodMonth?: number }) =>
-    request<PaymentResponse>(`/payments/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  patchPayment: (id: number, data: {
+    studentId?: number;
+    tariffPlanId?: number;
+    periodYear?: number;
+    periodMonth?: number;
+    matchStatus?: PaymentMatchStatus;
+  }) => request<PaymentResponse>(`/payments/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   ignorePayment: (id: number) => request<PaymentResponse>(`/payments/${id}/ignore`, { method: 'POST' }),
 

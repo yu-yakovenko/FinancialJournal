@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, formatUah } from '../api/client';
-import type { PaymentDetail, PaymentResponse, StudentResponse, TariffPlan } from '../api/types';
+import type { PaymentDetail, PaymentMatchStatus, PaymentResponse, StudentResponse, TariffPlan } from '../api/types';
 import { PaymentEditForm } from './PaymentEditForm';
 
 interface Props {
@@ -54,7 +54,13 @@ export function PaymentDetailModal({
 
   useEffect(reload, [studentId, tariffPlanId, year, month]);
 
-  async function handleSave(data: { studentId?: number; tariffPlanId?: number; periodYear?: number; periodMonth?: number }) {
+  async function handleSave(data: {
+    studentId?: number;
+    tariffPlanId?: number;
+    periodYear?: number;
+    periodMonth?: number;
+    matchStatus?: PaymentMatchStatus;
+  }) {
     if (!editing) return;
     await api.patchPayment(editing.id, data);
     setEditing(null);

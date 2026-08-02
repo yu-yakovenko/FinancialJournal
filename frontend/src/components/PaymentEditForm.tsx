@@ -1,18 +1,30 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { formatUah } from '../api/client';
-import type { PaymentResponse, StudentResponse, TariffPlan } from '../api/types';
+import type { PaymentMatchStatus, PaymentResponse, StudentResponse, TariffPlan } from '../api/types';
 
 const MONTH_NAMES = [
   'січень', 'лютий', 'березень', 'квітень', 'травень', 'червень',
   'липень', 'серпень', 'вересень', 'жовтень', 'листопад', 'грудень',
 ];
 
+const STATUS_LABELS: Record<PaymentMatchStatus, string> = {
+  MATCHED: 'Зараховано',
+  NEEDS_REVIEW: 'Потребує уваги',
+  IGNORED: 'Ігнорується',
+};
+
 interface Props {
   payment: PaymentResponse;
   students: StudentResponse[];
   tariffPlans: TariffPlan[];
-  onSubmit: (data: { studentId?: number; tariffPlanId?: number; periodYear?: number; periodMonth?: number }) => Promise<void>;
+  onSubmit: (data: {
+    studentId?: number;
+    tariffPlanId?: number;
+    periodYear?: number;
+    periodMonth?: number;
+    matchStatus?: PaymentMatchStatus;
+  }) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -22,6 +34,7 @@ export function PaymentEditForm({ payment, students, tariffPlans, onSubmit, onCa
   const [tariffPlanId, setTariffPlanId] = useState<number | ''>(payment.tariffPlanId ?? '');
   const [periodYear, setPeriodYear] = useState(payment.periodYear ?? now.getFullYear());
   const [periodMonth, setPeriodMonth] = useState(payment.periodMonth ?? now.getMonth() + 1);
+  const [matchStatus, setMatchStatus] = useState<PaymentMatchStatus>(payment.matchStatus);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +48,7 @@ export function PaymentEditForm({ payment, students, tariffPlans, onSubmit, onCa
         tariffPlanId: tariffPlanId === '' ? undefined : tariffPlanId,
         periodYear,
         periodMonth,
+        matchStatus,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -96,6 +110,19 @@ export function PaymentEditForm({ payment, students, tariffPlans, onSubmit, onCa
               style={{ width: 90 }}
             />
           </div>
+        </div>
+
+        <div className="form-row">
+          <label htmlFor="matchStatus">Статус</label>
+          <select
+            id="matchStatus"
+            value={matchStatus}
+            onChange={(e) => setMatchStatus(e.target.value as PaymentMatchStatus)}
+          >
+            {(Object.keys(STATUS_LABELS) as PaymentMatchStatus[]).map((status) => (
+              <option key={status} value={status}>{STATUS_LABELS[status]}</option>
+            ))}
+          </select>
         </div>
 
         <div className="toolbar">
