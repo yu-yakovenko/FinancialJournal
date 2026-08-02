@@ -133,6 +133,10 @@ public class Payment {
         return source;
     }
 
+    public String getMonobankTransactionId() {
+        return monobankTransactionId;
+    }
+
     public long getAmountKopiykas() {
         return amountKopiykas;
     }
@@ -171,6 +175,10 @@ public class Payment {
 
     public String getSenderName() {
         return senderName;
+    }
+
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
     }
 
     public PaymentMatchStatus getMatchStatus() {
