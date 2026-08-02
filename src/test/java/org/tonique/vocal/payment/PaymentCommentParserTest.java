@@ -62,6 +62,66 @@ class PaymentCommentParserTest {
     }
 
     @Test
+    void acceptsSplataSpellingAsAlternativeToOplata() {
+        Optional<PaymentCommentParser.ParsedComment> result =
+                PaymentCommentParser.parse("Сплата за уроки вокалу, серпень, Іваненко Ольга Петрівна");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().month()).isEqualTo(8);
+        assertThat(result.get().payerName()).isEqualTo("Іваненко Ольга Петрівна");
+    }
+
+    @Test
+    void acceptsSplataSpellingAsAlternativeToOplataLatinLaterS() {
+        Optional<PaymentCommentParser.ParsedComment> result =
+                PaymentCommentParser.parse("cплата за уроки вокалу, серпень, Іваненко Ольга Петрівна");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().month()).isEqualTo(8);
+        assertThat(result.get().payerName()).isEqualTo("Іваненко Ольга Петрівна");
+    }
+
+    @Test
+    void acceptsSplataSpellingAsAlternativeToOplataSmallLater() {
+        Optional<PaymentCommentParser.ParsedComment> result =
+                PaymentCommentParser.parse("сплата за уроки вокалу, серпень, Іваненко Ольга Петрівна");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().month()).isEqualTo(8);
+        assertThat(result.get().payerName()).isEqualTo("Іваненко Ольга Петрівна");
+    }
+
+    @Test
+    void parsesMonthRangeAsLastMonth() {
+        Optional<PaymentCommentParser.ParsedComment> result =
+                PaymentCommentParser.parse("Оплата за уроки вокалу, червень-серпень, Молодець Петро Васильович");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().month()).isEqualTo(8);
+        assertThat(result.get().payerName()).isEqualTo("Молодець Петро Васильович");
+    }
+
+    @Test
+    void parsesMonthRangeWithSpacesAroundHyphen() {
+        Optional<PaymentCommentParser.ParsedComment> result =
+                PaymentCommentParser.parse("Оплата за уроки вокалу, червень - серпень, Молодець Петро Васильович");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().month()).isEqualTo(8);
+        assertThat(result.get().payerName()).isEqualTo("Молодець Петро Васильович");
+    }
+
+    @Test
+    void treatsHyphenAsSeparatorWhenSecondTokenIsNotAMonth() {
+        Optional<PaymentCommentParser.ParsedComment> result =
+                PaymentCommentParser.parse("Оплата за уроки вокалу серпень-Молодець Петро Васильович");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().month()).isEqualTo(8);
+        assertThat(result.get().payerName()).isEqualTo("Молодець Петро Васильович");
+    }
+
+    @Test
     void failsOnUnknownMonthToken() {
         Optional<PaymentCommentParser.ParsedComment> result =
                 PaymentCommentParser.parse("Оплата за уроки вокалу, місяцьX, Іваненко Ольга Петрівна");
