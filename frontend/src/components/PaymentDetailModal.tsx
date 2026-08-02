@@ -35,6 +35,7 @@ function toPaymentResponse(payment: PaymentDetail, studentId: number, tariffPlan
     periodMonth: month,
     rawComment: payment.comment,
     parsedPayerName: null,
+    senderName: payment.senderName,
   };
 }
 
@@ -76,6 +77,7 @@ export function PaymentDetailModal({
                 <th>Сума</th>
                 <th>Джерело</th>
                 <th>Коментар</th>
+                <th>Відправник</th>
                 <th></th>
               </tr>
             </thead>
@@ -86,6 +88,7 @@ export function PaymentDetailModal({
                   <td>{formatUah(payment.amountKopiykas)} грн</td>
                   <td>{payment.source === 'CASH' ? 'Готівка' : 'Банк'}</td>
                   <td>{payment.comment ?? '—'}</td>
+                  <td>{payment.senderName ?? '—'}</td>
                   <td>
                     <button onClick={() => setEditing(payment)}>Редагувати</button>
                   </td>

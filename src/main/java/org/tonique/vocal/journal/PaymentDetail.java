@@ -9,6 +9,7 @@ public record PaymentDetail(
         PaymentSource source,
         long amountKopiykas,
         LocalDate paymentDate,
-        String comment
+        String comment,
+        String senderName
 ) {
 }

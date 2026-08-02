@@ -126,7 +126,8 @@ public class JournalService {
                         payment.getSource(),
                         payment.getAmountKopiykas(),
                         payment.getPaymentDate(),
-                        payment.getRawComment()
+                        payment.getRawComment(),
+                        payment.getSenderName()
                 ))
                 .toList();
     }

@@ -61,6 +61,9 @@ public class Payment {
 
     private String parsedPayerName;
 
+    /** Monobank's own counterparty name on the statement line ("Відправник"), independent of parsedPayerName. */
+    private String senderName;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentMatchStatus matchStatus;
@@ -71,13 +74,15 @@ public class Payment {
     protected Payment() {
     }
 
-    public static Payment bank(String monobankTransactionId, long amountKopiykas, LocalDate paymentDate, String rawComment) {
+    public static Payment bank(String monobankTransactionId, long amountKopiykas, LocalDate paymentDate, String rawComment,
+                                String senderName) {
         Payment payment = new Payment();
         payment.source = PaymentSource.BANK;
         payment.monobankTransactionId = monobankTransactionId;
         payment.amountKopiykas = amountKopiykas;
         payment.paymentDate = paymentDate;
         payment.rawComment = rawComment;
+        payment.senderName = senderName;
         payment.matchStatus = PaymentMatchStatus.NEEDS_REVIEW;
         return payment;
     }
@@ -162,6 +167,10 @@ public class Payment {
 
     public void setParsedPayerName(String parsedPayerName) {
         this.parsedPayerName = parsedPayerName;
+    }
+
+    public String getSenderName() {
+        return senderName;
     }
 
     public PaymentMatchStatus getMatchStatus() {

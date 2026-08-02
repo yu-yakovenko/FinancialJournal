@@ -81,7 +81,7 @@ public class PaymentIngestionService {
         }
 
         LocalDate transactionDate = Instant.ofEpochSecond(item.time()).atZone(MonobankClient.KYIV_ZONE).toLocalDate();
-        Payment payment = Payment.bank(item.id(), item.amount(), transactionDate, item.comment());
+        Payment payment = Payment.bank(item.id(), item.amount(), transactionDate, item.comment(), item.counterName());
 
         if (item.comment() != null && ACQUIRING_KEYWORD.matcher(item.comment()).find()) {
             return ingestAcquiring(payment, transactionDate);
