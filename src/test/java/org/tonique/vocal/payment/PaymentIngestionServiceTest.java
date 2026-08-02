@@ -82,6 +82,24 @@ class PaymentIngestionServiceTest {
     }
 
     @Test
+    void capturesTheBankCounterpartyNameAsSenderName() {
+        StatementItem item = statementItem("tx-12", 170_000,
+                "Оплата за уроки вокалу, серпень, Іваненко Ольга Петрівна", "Іваненко Ольга Петрівна");
+
+        when(studentService.findActive()).thenReturn(List.of());
+        when(tariffPricingService.plansForAmountAt(170_000, LocalDate.of(2026, 8, 1)))
+                .thenReturn(new TariffPricing.TariffMatchResult(List.of(CHOIR_STANDARD)));
+        when(studentService.createFromPayment("Іваненко Ольга Петрівна"))
+                .thenReturn(new Student("Іваненко Ольга Петрівна"));
+
+        ingestionService.ingest(List.of(item));
+
+        ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(captor.capture());
+        assertThat(captor.getValue().getSenderName()).isEqualTo("Іваненко Ольга Петрівна");
+    }
+
+    @Test
     void declaredYearInCommentOverridesTheInferredPeriodYear() {
         Student existing = new Student("Шевченко Олег");
         StatementItem item = statementItem("tx-11", 170_000,
@@ -257,10 +275,14 @@ class PaymentIngestionServiceTest {
     }
 
     private static StatementItem statementItem(String id, long amount, String comment) {
+        return statementItem(id, amount, comment, null);
+    }
+
+    private static StatementItem statementItem(String id, long amount, String comment, String counterName) {
         return new StatementItem(
                 id, STATEMENT_DATE.atStartOfDay().toEpochSecond(ZoneOffset.UTC),
                 "description", 0, 0, false, amount, amount, 980, 0, 0, 0,
-                comment, null, null, null, null, null
+                comment, null, null, null, null, counterName
         );
     }
 }

@@ -62,6 +62,7 @@ export interface PaymentDetail {
   amountKopiykas: number;
   paymentDate: string;
   comment: string | null;
+  senderName: string | null;
 }
 
 export interface StudentResponse {
@@ -85,6 +86,7 @@ export interface PaymentResponse {
   periodMonth: number | null;
   rawComment: string | null;
   parsedPayerName: string | null;
+  senderName: string | null;
 }
 
 export interface IngestResult {

@@ -177,6 +177,7 @@ export function PaymentsPage() {
                   <th>Тариф</th>
                   <th>Період</th>
                   <th>Коментар</th>
+                  <th>Відправник</th>
                   <th></th>
                 </tr>
               </thead>
@@ -200,6 +201,7 @@ export function PaymentsPage() {
                         {p.periodYear && p.periodMonth ? `${MONTH_NAMES[p.periodMonth - 1]} ${p.periodYear}` : '—'}
                       </td>
                       <td className="muted">{p.rawComment ?? '—'}</td>
+                      <td className="muted">{p.senderName ?? '—'}</td>
                       <td>
                         <button onClick={() => setEditing(p)}>Редагувати</button>{' '}
                         {p.matchStatus !== 'IGNORED' && (

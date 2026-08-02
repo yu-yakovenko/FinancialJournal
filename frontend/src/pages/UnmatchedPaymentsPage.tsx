@@ -114,6 +114,7 @@ function UnmatchedPaymentRow({
       <div className="muted" style={{ margin: '4px 0 12px' }}>
         Коментар: {payment.rawComment ?? '—'}
         {payment.parsedPayerName && <> · Розпізнане ім'я: {payment.parsedPayerName}</>}
+        {payment.senderName && <> · Відправник: {payment.senderName}</>}
       </div>
       {error && <div className="error-banner">{error}</div>}
       <div className="toolbar">

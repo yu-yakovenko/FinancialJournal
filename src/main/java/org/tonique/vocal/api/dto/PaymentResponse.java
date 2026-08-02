@@ -18,7 +18,8 @@ public record PaymentResponse(
         Integer periodYear,
         Integer periodMonth,
         String rawComment,
-        String parsedPayerName
+        String parsedPayerName,
+        String senderName
 ) {
 
     public static PaymentResponse from(Payment payment) {
@@ -34,7 +35,8 @@ public record PaymentResponse(
                 payment.getPeriodYear(),
                 payment.getPeriodMonth(),
                 payment.getRawComment(),
-                payment.getParsedPayerName()
+                payment.getParsedPayerName(),
+                payment.getSenderName()
         );
     }
 }
