@@ -1,6 +1,12 @@
 import { NavLink } from 'react-router-dom';
+import { api } from '../api/client';
 
 export function NavBar() {
+  async function handleLogout() {
+    await api.logout();
+    window.location.assign('/login');
+  }
+
   return (
     <nav className="app-nav">
       <strong className="brand">Tonique Vocal School</strong>
@@ -22,6 +28,9 @@ export function NavBar() {
       <NavLink to="/admin" className={({ isActive }) => (isActive ? 'active' : '')}>
         Адміністрування
       </NavLink>
+      <button type="button" className="logout-link" onClick={handleLogout}>
+        Вийти
+      </button>
     </nav>
   );
 }

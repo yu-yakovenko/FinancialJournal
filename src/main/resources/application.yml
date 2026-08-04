@@ -11,6 +11,8 @@ spring:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  auth:
+    password: ${AUTH_PASSWORD}
 
 monobank:
   token: ${MONOBANK_TOKEN}

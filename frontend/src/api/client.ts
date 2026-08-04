@@ -21,6 +21,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
 
+  if (response.status === 401 && path !== '/auth/login') {
+    window.location.assign('/login');
+    throw new Error('Необхідна автентифікація');
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new Error(body?.error ?? `Помилка запиту: ${response.status}`);
@@ -32,6 +36,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  login: (password: string) => request<void>('/auth/login', { method: 'POST', body: JSON.stringify({ password }) }),
+
+  logout: () => request<void>('/auth/logout', { method: 'POST' }),
+
   journal: (year: number) => request<JournalGrid>(`/journal?year=${year}`),
 
   studentPayments: (studentId: number, tariffPlanId: number, year: number, month: number) =>
